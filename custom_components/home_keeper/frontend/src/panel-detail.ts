@@ -20,6 +20,7 @@ import { t, tn } from './i18n';
 import { markdownBlock } from './markdown';
 import {
   areaChip,
+  assigneeChips,
   deviceChip,
   isManagedOrphan,
   managedChip,
@@ -258,6 +259,7 @@ function taskDetail(p: PanelHost, task: Task): string {
   // device chip sits right beside it and shows where it came from.
   const area = areaChip(p, task);
   const tag = tagChip(p, task);
+  const assignees = assigneeChips(p, task).join('');
   const managed = managedChip(p, task);
   const taskChips = taskChipsHtml(task);
   const mb = task.managed_by;
@@ -447,7 +449,7 @@ function taskDetail(p: PanelHost, task: Task): string {
   return `
       <ha-card class="hk-detail-card hk-asset-head"><div class="hk-detail-inner">
         <div class="hk-detail-title">${escapeHTML(task.name)}</div>
-        <div class="hk-chips">${statusChip}${dev}${area}${tag}${taskChips}${managed}</div>
+        <div class="hk-chips">${statusChip}${dev}${area}${tag}${assignees}${taskChips}${managed}</div>
         <div class="hk-detail-actions">
           ${doneSplit}
           ${manage}

@@ -724,5 +724,14 @@
   "part.low": "Nízká",
   "part.reorderAt": "Objednat při {n}",
   "toast.stockSet": "Zásoba nastavena na {n}",
-  "transfer.tooLarge": "Tento dokument je větší než limit panelu {mb} MB. Rozdělte ho na menší soubory, nebo použijte službu home_keeper.import_data pro dokumenty do {max} MB."
+  "transfer.tooLarge": "Tento dokument je větší než limit panelu {mb} MB. Rozdělte ho na menší soubory, nebo použijte službu home_keeper.import_data pro dokumenty do {max} MB.",
+  "chip.assignee.tip": "Assigned. Any assignee can complete this task.",
+  "help.assignees": "Optional. Notify these people when it's due, and let any one of them mark it done.",
+  "notify.assignees": "Assignees",
+  "notify.assignees_help": "Filter to tasks assigned to these people. Pair with a target set to their phone to build a per-person notification.",
+  "notify.exclude_assignees": "Exclude assignees",
+  "notify.opt.snooze_1h": "Snooze 1 hour",
+  "notify.opt.snooze_1d": "Snooze 1 day",
+  "notify.opt.snooze_1w": "Snooze 1 week",
+  "field.assignees": "Assignees"
 }

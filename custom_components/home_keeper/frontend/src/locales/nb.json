@@ -690,5 +690,14 @@
   "part.low": "Lavt",
   "part.reorderAt": "Bestill ved {n}",
   "toast.stockSet": "Lager satt til {n}",
-  "transfer.tooLarge": "Dette dokumentet er større enn grensen på {mb} MB for panelet. Del det opp i mindre filer, eller bruk tjenesten home_keeper.import_data for dokumenter opptil {max} MB."
+  "transfer.tooLarge": "Dette dokumentet er større enn grensen på {mb} MB for panelet. Del det opp i mindre filer, eller bruk tjenesten home_keeper.import_data for dokumenter opptil {max} MB.",
+  "chip.assignee.tip": "Assigned. Any assignee can complete this task.",
+  "help.assignees": "Optional. Notify these people when it's due, and let any one of them mark it done.",
+  "notify.assignees": "Assignees",
+  "notify.assignees_help": "Filter to tasks assigned to these people. Pair with a target set to their phone to build a per-person notification.",
+  "notify.exclude_assignees": "Exclude assignees",
+  "notify.opt.snooze_1h": "Snooze 1 hour",
+  "notify.opt.snooze_1d": "Snooze 1 day",
+  "notify.opt.snooze_1w": "Snooze 1 week",
+  "field.assignees": "Assignees"
 }

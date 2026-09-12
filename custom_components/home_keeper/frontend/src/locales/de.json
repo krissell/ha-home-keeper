@@ -690,5 +690,14 @@
   "part.low": "Niedrig",
   "part.reorderAt": "Nachbestellen bei {n}",
   "toast.stockSet": "Bestand auf {n} gesetzt",
-  "transfer.tooLarge": "Dieses Dokument ist größer als das Limit von {mb} MB für das Panel. Teile es in kleinere Dateien auf, oder verwende den Dienst home_keeper.import_data für Dokumente bis {max} MB."
+  "transfer.tooLarge": "Dieses Dokument ist größer als das Limit von {mb} MB für das Panel. Teile es in kleinere Dateien auf, oder verwende den Dienst home_keeper.import_data für Dokumente bis {max} MB.",
+  "chip.assignee.tip": "Assigned. Any assignee can complete this task.",
+  "help.assignees": "Optional. Notify these people when it's due, and let any one of them mark it done.",
+  "notify.assignees": "Assignees",
+  "notify.assignees_help": "Filter to tasks assigned to these people. Pair with a target set to their phone to build a per-person notification.",
+  "notify.exclude_assignees": "Exclude assignees",
+  "notify.opt.snooze_1h": "Snooze 1 hour",
+  "notify.opt.snooze_1d": "Snooze 1 day",
+  "notify.opt.snooze_1w": "Snooze 1 week",
+  "field.assignees": "Assignees"
 }

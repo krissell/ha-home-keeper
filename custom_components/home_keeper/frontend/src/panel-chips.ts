@@ -24,6 +24,7 @@ import {
   escapeHTML,
   isHttpUrl,
   navigateTo,
+  personName,
   safeHref,
   scanRequired,
   tagName,
@@ -112,6 +113,23 @@ export function tagChip(p: PanelHost, task: Task): string {
   const label = tagName(p._tags, task.tag_id) || t('chip.nfc');
   const icon = `<ha-icon slot="icon" icon="${iconName}" class="hk-chip-ic"></ha-icon>`;
   return `<ha-assist-chip class="hk-tag" label="${escapeHTML(label)}" title="${escapeHTML(tip)}">${icon}</ha-assist-chip>`;
+}
+
+/**
+ * One chip per task assignee, naming the HA person (falling back to the raw
+ * entity id when that person's state isn't loaded — same fallback `personName`
+ * always uses). Each assignee gets its own chip, same "+n" inline-overflow
+ * handling as any other chip, rather than one chip cramming every name into a
+ * single label. Empty array when the task is unassigned.
+ */
+export function assigneeChips(p: PanelHost, task: Task): string[] {
+  return (task.assignees ?? []).map((entityId) => {
+    const name = personName(p._hass, entityId);
+    const icon = `<ha-icon slot="icon" icon="mdi:account" class="hk-chip-ic"></ha-icon>`;
+    return `<ha-assist-chip label="${escapeHTML(name)}" title="${escapeHTML(
+      t('chip.assignee.tip'),
+    )}">${icon}</ha-assist-chip>`;
+  });
 }
 
 /** Renders a "Managed by X" chip (or "Integration offline" if orphaned). */

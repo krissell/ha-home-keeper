@@ -1116,6 +1116,10 @@ function profileEditor(p: PanelHost, profile: Profile): HTMLElement {
               // A task the user made has no owning integration, so a companion
               // filter silently leaves it out. Say so where the choice is made.
               if (s.name === 'companions') return t('notify.companions_help');
+              // This is the field that turns a Profile into a per-person filter:
+              // "notify Krissell" is `assignees: [person.krissell]` plus this
+              // profile's target set to that person's phone.
+              if (s.name === 'assignees') return t('notify.assignees_help');
               return '';
             },
           },
