@@ -1,6 +1,9 @@
 {
   "action_complete": "Mark done",
   "action_snooze": "Snooze {hours}h",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week",
   "action_skip": "Skip",
   "action_open": "Open",
   "due_now": "Due now.",

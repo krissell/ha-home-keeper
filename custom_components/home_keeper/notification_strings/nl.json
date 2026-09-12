@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…en nog {more}",
   "all_clear_title": "Helemaal bij",
-  "all_clear_message": "Op dit moment geen taken te doen. 🎉"
+  "all_clear_message": "Op dit moment geen taken te doen. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

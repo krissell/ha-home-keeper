@@ -39,10 +39,12 @@ def test_normalize_profile_defaults_and_id():
         "areas": [],
         "devices": [],
         "companions": [],
+        "assignees": [],
         "exclude_labels": [],
         "exclude_areas": [],
         "exclude_devices": [],
         "exclude_companions": [],
+        "exclude_assignees": [],
         "exclude_shopping": False,
         "status": "overdue",
     }
@@ -208,6 +210,28 @@ def test_matches_filter_labels_areas_devices():
     assert not p.matches_filter(t, {"status": "all", "devices": ["dev2"]}, now=now)
 
 
+def test_matches_filter_assignees():
+    now = dt(2026, 6, 13, 12)
+    t = task(
+        "1",
+        "A",
+        dt(2026, 6, 10),
+        assignees=["person.krissell", "person.angie"],
+    )
+    # OR within the list: matching any one assignee is enough.
+    assert p.matches_filter(t, {"status": "all", "assignees": ["person.krissell"]}, now=now)
+    assert p.matches_filter(t, {"status": "all", "assignees": ["person.angie"]}, now=now)
+    assert not p.matches_filter(
+        t, {"status": "all", "assignees": ["person.someone_else"]}, now=now
+    )
+    # An empty assignees list means "any" (unassigned tasks stay unfiltered).
+    assert p.matches_filter(t, {"status": "all", "assignees": []}, now=now)
+    unassigned = task("2", "B", dt(2026, 6, 10))
+    assert not p.matches_filter(
+        unassigned, {"status": "all", "assignees": ["person.krissell"]}, now=now
+    )
+
+
 # ── exclusions ──────────────────────────────────────────────────────────────
 
 
@@ -219,10 +243,12 @@ def test_normalize_filter_reads_every_input_key():
         "areas": ["a"],
         "devices": ["d"],
         "companions": ["c"],
+        "assignees": ["person.x"],
         "exclude_labels": ["xl"],
         "exclude_areas": ["xa"],
         "exclude_devices": ["xd"],
         "exclude_companions": ["xc"],
+        "exclude_assignees": ["person.y"],
         "exclude_shopping": True,
         "status": "all",
     }
@@ -257,6 +283,28 @@ def test_matches_filter_exclusions_drop_a_task():
     assert p.matches_filter(t, {"status": "all", "exclude_labels": ["hers"]}, now=now)
     assert p.matches_filter(t, {"status": "all", "exclude_areas": ["garage"]}, now=now)
     assert p.matches_filter(t, {"status": "all", "exclude_devices": ["dev2"]}, now=now)
+
+
+def test_matches_filter_exclude_assignees_drops_a_task_and_wins_over_include():
+    now = dt(2026, 6, 13, 12)
+    t = task("1", "A", dt(2026, 6, 10), assignees=["person.krissell"])
+    assert not p.matches_filter(
+        t, {"status": "all", "exclude_assignees": ["person.krissell"]}, now=now
+    )
+    # An exclusion the task doesn't hit leaves it alone.
+    assert p.matches_filter(
+        t, {"status": "all", "exclude_assignees": ["person.angie"]}, now=now
+    )
+    # Exclusion wins even when the task also satisfies an include.
+    assert not p.matches_filter(
+        t,
+        {
+            "status": "all",
+            "assignees": ["person.krissell"],
+            "exclude_assignees": ["person.krissell"],
+        },
+        now=now,
+    )
 
 
 def test_exclude_shopping_drops_the_auto_buy_reminders():

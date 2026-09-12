@@ -395,6 +395,68 @@ def test_the_switches_default_on_so_an_unaware_caller_is_unaffected():
     assert n.actions_for({"id": "t"}, ALL_VERBS) == ALL_VERBS
 
 
+# ── fixed-duration snooze buttons (snooze_1h / snooze_1d / snooze_1w) ────────────
+
+
+def test_snooze_verb_hours_covers_every_duration_verb():
+    assert n.SNOOZE_VERB_HOURS == {
+        n.ACTION_SNOOZE_1H: 1,
+        n.ACTION_SNOOZE_1D: 24,
+        n.ACTION_SNOOZE_1W: 24 * 7,
+    }
+    # Every duration verb round-trips through the closed ACTIONS enum decode_action
+    # checks against, and is grouped under SNOOZE_ACTIONS with the plain verb.
+    for verb in n.SNOOZE_VERB_HOURS:
+        assert verb in n.ACTIONS
+        assert verb in n.SNOOZE_ACTIONS
+    assert n.ACTION_SNOOZE in n.SNOOZE_ACTIONS
+
+
+def test_encode_decode_round_trips_a_duration_snooze_verb():
+    action = n.encode_action(n.ACTION_SNOOZE_1W, "task1", "notif1", "2026-06-16T10:00")
+    assert n.decode_action(action) == (
+        n.ACTION_SNOOZE_1W,
+        "task1",
+        "notif1",
+        "2026-06-16T10:00",
+    )
+
+
+def test_actions_for_treats_duration_verbs_like_plain_snooze():
+    task = {"id": "t"}
+    duration_set = ["complete", "snooze_1h", "snooze_1d", "snooze_1w"]
+    # The allow_snooze switch gates every duration verb, same as the plain one.
+    assert n.actions_for(task, duration_set, allow_snooze=False) == ["complete"]
+    assert n.actions_for(task, duration_set, allow_snooze=True) == duration_set
+    # A completion-blocked task keeps a configured duration verb (it is snooze-like),
+    # same as it keeps the plain one.
+    assert n.actions_for(BLOCKED, ["complete", "snooze_1d", "open"]) == [
+        "snooze_1d",
+        "open",
+    ]
+
+
+def test_a_blocked_task_with_no_snooze_like_verb_still_gets_the_plain_injection():
+    # The #248 safety-net injection always inserts the plain "snooze" verb, even when
+    # the configured set only ever had duration verbs stripped out of it (here: none
+    # configured at all) — it does not need to match the *kind* of verb that was there.
+    assert n.actions_for(BLOCKED, ["complete", "open"]) == ["snooze", "open"]
+
+
+def test_action_button_titles_for_duration_verbs():
+    task = {"id": "t1", "name": "Task", "next_due": "2026-06-12T12:00:00"}
+    notif = n.normalize_notification({"id": "n1"})
+    assert n._action_button(n.ACTION_SNOOZE_1H, task, notif, lang="en")["title"] == (
+        "Snooze 1h"
+    )
+    assert n._action_button(n.ACTION_SNOOZE_1D, task, notif, lang="en")["title"] == (
+        "Snooze 1 day"
+    )
+    assert n._action_button(n.ACTION_SNOOZE_1W, task, notif, lang="en")["title"] == (
+        "Snooze 1 week"
+    )
+
+
 def test_build_notification_offers_only_snooze_and_open_on_a_blocked_task():
     now = dt(2026, 6, 13, 12)
     task = {

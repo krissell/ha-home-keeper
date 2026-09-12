@@ -89,6 +89,10 @@
           "name": "Labels",
           "description": "Optional Home Assistant labels to tag this task with. Used by the dashboard card's label filter (which also matches labels on the attached device or area)."
         },
+        "assignees": {
+          "name": "Assignees",
+          "description": "Optional Home Assistant person entities this task is assigned to. Any one assignee's phone gets notified, and any one of them completing the task completes it for everyone."
+        },
         "card_links": {
           "name": "Card links",
           "description": "Appliance links to surface on this task's dashboard-card row: a list of (asset_id, entry_id) objects pointing at an appliance's document or metadata links. Usually set from the panel's task editor."
@@ -178,6 +182,10 @@
         "labels": {
           "name": "Labels",
           "description": "Home Assistant labels to tag this task with (replaces the current set). Used by the dashboard card's label filter."
+        },
+        "assignees": {
+          "name": "Assignees",
+          "description": "Home Assistant person entities this task is assigned to (replaces the current set). Any one assignee's phone gets notified, and any one of them completing the task completes it for everyone."
         },
         "card_links": {
           "name": "Card links",

@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…und {more} weitere",
   "all_clear_title": "Alles erledigt",
-  "all_clear_message": "Gerade sind keine Aufgaben fällig. 🎉"
+  "all_clear_message": "Gerade sind keine Aufgaben fällig. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

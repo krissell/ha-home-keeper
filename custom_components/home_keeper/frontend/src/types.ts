@@ -164,6 +164,11 @@ export interface Task {
   // HA label-registry ids attached directly to this task. The dashboard card can
   // filter by label, matching a task via its own labels or those on its device/area.
   labels?: string[];
+  // HA person entity ids this task is assigned to. Any one assignee's phone gets
+  // notified (via an assignee-filtered Notification profile); any one of them
+  // completing the task completes it for everyone — there is no per-assignee
+  // completion state. Empty/absent = unassigned.
+  assignees?: string[];
   // References to appliance links the dashboard card surfaces on this task's row:
   // each pair points at an appliance document of kind `link` or a metadata entry of
   // type `link`. The card resolves them to a live name/URL and silently drops any
@@ -451,7 +456,14 @@ export interface NotifyRunOptions {
   status?: NotifyRunStatus;
   when_empty?: NotifyWhenEmpty;
 }
-export type NotifyAction = 'complete' | 'snooze' | 'skip' | 'open';
+export type NotifyAction =
+  | 'complete'
+  | 'snooze'
+  | 'snooze_1h'
+  | 'snooze_1d'
+  | 'snooze_1w'
+  | 'skip'
+  | 'open';
 export type NotifyStyle = 'walk' | 'digest';
 /** How loudly a notification lands. Platform-neutral on purpose: the backend
  *  (`notifications.payload_data`) expands it into Android's channel `importance` and
@@ -483,11 +495,16 @@ export interface NotifyFilter {
    *  owns it. A task no integration claims has none, so it is never selected here and
    *  never dropped by `exclude_companions`. */
   companions: string[];
+  /** HA person entity ids from a task's own `assignees`. No inheritance, unlike
+   *  labels — this is how a per-person Notification is built (filter on one
+   *  assignee, target that person's phone). */
+  assignees: string[];
   /** Ids that disqualify a task even when it cleared the include lists above. */
   exclude_labels: string[];
   exclude_areas: string[];
   exclude_devices: string[];
   exclude_companions: string[];
+  exclude_assignees: string[];
   /** Drop the auto-created "Buy {part}" reminders — by kind, since they carry no
    *  id of their own to exclude. */
   exclude_shopping: boolean;

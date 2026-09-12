@@ -120,6 +120,10 @@
         "active_season": {
           "name": "Active season",
           "description": "Restrict this task to one or more date ranges each year. Outside the active windows the next due date moves to the nearest upcoming window start. Each object has start and end as MM-DD strings; pass a list or a single object. Wrapping seasons (Nov through Mar) are supported. Null clears the season."
+        },
+        "assignees": {
+          "name": "Assignees",
+          "description": "Optional Home Assistant person entities this task is assigned to. Any one assignee's phone gets notified, and any one of them completing the task completes it for everyone."
         }
       }
     },
@@ -210,6 +214,10 @@
         "active_season": {
           "name": "Active season",
           "description": "Restrict this task to one or more date ranges each year. Each object has start and end as MM-DD strings; pass a list, a single object, or null to clear."
+        },
+        "assignees": {
+          "name": "Assignees",
+          "description": "Home Assistant person entities this task is assigned to (replaces the current set). Any one assignee's phone gets notified, and any one of them completing the task completes it for everyone."
         }
       }
     },

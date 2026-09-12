@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…a dalších {more}",
   "all_clear_title": "Vše splněno",
-  "all_clear_message": "Momentálně nejsou žádné úkoly. 🎉"
+  "all_clear_message": "Momentálně nejsou žádné úkoly. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

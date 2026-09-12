@@ -131,6 +131,16 @@ add_task:
       selector:
         label:
           multiple: true
+    assignees:
+      name: Assignees
+      description: >-
+        Optional Home Assistant person entities this task is assigned to. Any one
+        assignee's phone gets notified, and any one of them completing the task
+        completes it for everyone. Leave empty for an unassigned task.
+      selector:
+        entity:
+          domain: person
+          multiple: true
     card_links:
       name: Card links
       description: >-
@@ -317,6 +327,16 @@ update_task:
         Used by the dashboard card's label filter.
       selector:
         label:
+          multiple: true
+    assignees:
+      name: Assignees
+      description: >-
+        Home Assistant person entities this task is assigned to (replaces the
+        current set). Any one assignee's phone gets notified, and any one of them
+        completing the task completes it for everyone.
+      selector:
+        entity:
+          domain: person
           multiple: true
     card_links:
       name: Card links

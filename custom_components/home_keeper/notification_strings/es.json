@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…y {more} más",
   "all_clear_title": "Todo al día",
-  "all_clear_message": "No hay tareas pendientes ahora mismo. 🎉"
+  "all_clear_message": "No hay tareas pendientes ahora mismo. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

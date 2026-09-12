@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…og {more} flere",
   "all_clear_title": "Alt er klaret",
-  "all_clear_message": "Ingen opgaver lige nu. 🎉"
+  "all_clear_message": "Ingen opgaver lige nu. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

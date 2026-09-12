@@ -481,6 +481,32 @@ def normalize_labels(value: Any) -> list[str]:
     return result
 
 
+def normalize_assignees(value: Any) -> list[str]:
+    """Normalize a task's ``assignees`` into a de-duplicated list of HA person ids.
+
+    Accepts a list/tuple of strings (``person.*`` entity ids), a single string, or
+    ``None``; blanks and duplicates are dropped while order is preserved. Mirrors
+    ``normalize_labels`` exactly — format validation (that each id is really a
+    ``person.*`` entity) is the frontend's entity-selector job, same as ``who`` on
+    completion metadata. An empty list means "unassigned": any assignee-based
+    notification routing has nothing to send to, but the task itself is unaffected.
+    """
+    if value in (None, "", []):
+        return []
+    if isinstance(value, str):
+        value = [value]
+    if not isinstance(value, (list, tuple)):
+        raise TaskValidationError("assignees must be a list of person entity ids")
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in value:
+        person = str(item).strip()
+        if person and person not in seen:
+            seen.add(person)
+            result.append(person)
+    return result
+
+
 def normalize_card_links(value: Any) -> list[dict[str, str]]:
     """Normalize a task's ``card_links`` — references to appliance links to surface
     on the dashboard task card.
@@ -893,6 +919,10 @@ def build_task(data: dict, *, now: datetime) -> dict:
         # ``normalize_fields`` so an update can only set it when it is actually sent.
         "external_id": normalize_external_id(data.get("external_id")),
         "labels": normalize_labels(data.get("labels")),
+        # HA person entity ids this task is assigned to. Independent of
+        # recurrence/identity, like labels. Any one assignee completing the task
+        # completes it for everyone — there is no per-assignee completion state.
+        "assignees": normalize_assignees(data.get("assignees")),
         # References to appliance links (documents/metadata) the dashboard card shows
         # on this task's row. Independent of recurrence/identity, like labels.
         "card_links": normalize_card_links(data.get("card_links")),
@@ -1017,6 +1047,12 @@ def merge_update(existing: dict, updates: dict, *, now: datetime) -> dict:
     # had the field, which would surface as a phantom "labels changed" event).
     if "labels" in updates:
         merged["labels"] = normalize_labels(updates["labels"])
+
+    # Assignees are likewise independent of recurrence/identity; only rewrite them
+    # when the caller actually sent ``assignees`` so a plain rename doesn't wipe a
+    # task's assignment (normalize_fields never touches them).
+    if "assignees" in updates:
+        merged["assignees"] = normalize_assignees(updates["assignees"])
 
     # Card-link references are likewise independent of recurrence/identity; only
     # rewrite them when the caller actually sent ``card_links`` so a plain rename

@@ -434,6 +434,9 @@ export function taskSchemaSections(
           ...(!locked.has('labels')
             ? [{ name: 'labels', selector: selLabel(true) } as FormField]
             : []),
+          ...(!locked.has('assignees')
+            ? [{ name: 'assignees', selector: selEntity({ domain: 'person' }, true) } as FormField]
+            : []),
           ...cardLinksField,
         ],
       },
@@ -668,6 +671,9 @@ export function taskSchemaSections(
         ]
       : []),
     ...(!locked.has('labels') ? [{ name: 'labels', selector: selLabel(true) } as FormField] : []),
+    ...(!locked.has('assignees')
+      ? [{ name: 'assignees', selector: selEntity({ domain: 'person' }, true) } as FormField]
+      : []),
     ...cardLinksField,
   ];
 
@@ -1934,7 +1940,15 @@ export function partBackstopLabel(part: Part): string {
 // ── profiles (saved filters) & notifications (delivery) ─────────────────────
 
 const NOTIFY_STATUSES: NotifyStatus[] = ['all', 'overdue', 'due_soon'];
-const NOTIFY_ACTIONS: NotifyAction[] = ['complete', 'snooze', 'skip', 'open'];
+const NOTIFY_ACTIONS: NotifyAction[] = [
+  'complete',
+  'snooze',
+  'snooze_1h',
+  'snooze_1d',
+  'snooze_1w',
+  'skip',
+  'open',
+];
 const NOTIFY_STYLES: NotifyStyle[] = ['walk', 'digest'];
 // Quietest first, so the dropdown reads as a ladder rather than an unordered set.
 const NOTIFY_URGENCIES: NotifyUrgency[] = ['quiet', 'normal', 'high', 'critical'];
@@ -2054,10 +2068,12 @@ export function profileSchema(companions: CompanionOption[] = []): FormField[] {
     { name: 'labels', selector: selLabel(true) },
     { name: 'areas', selector: selArea(true) },
     { name: 'devices', selector: selDevice(true) },
+    { name: 'assignees', selector: selEntity({ domain: 'person' }, true) },
     ...(companionFields.length ? [companionFields[0]] : []),
     { name: 'exclude_labels', selector: selLabel(true) },
     { name: 'exclude_areas', selector: selArea(true) },
     { name: 'exclude_devices', selector: selDevice(true) },
+    { name: 'exclude_assignees', selector: selEntity({ domain: 'person' }, true) },
     ...(companionFields.length ? [companionFields[1]] : []),
     // Excludes by kind rather than by id, so it is a switch and not a picker: an
     // auto-created buy reminder has no label or area of its own to name.
@@ -2074,10 +2090,12 @@ export function profileFormData(p: Profile): Record<string, unknown> {
     areas: p.filter.areas,
     devices: p.filter.devices,
     companions: p.filter.companions,
+    assignees: p.filter.assignees,
     exclude_labels: p.filter.exclude_labels,
     exclude_areas: p.filter.exclude_areas,
     exclude_devices: p.filter.exclude_devices,
     exclude_companions: p.filter.exclude_companions,
+    exclude_assignees: p.filter.exclude_assignees,
     exclude_shopping: p.filter.exclude_shopping ?? false,
   };
 }
@@ -2104,10 +2122,12 @@ export function profileFormToProfile(
       areas: strList(data.areas),
       devices: strList(data.devices),
       companions: strList(data.companions),
+      assignees: strList(data.assignees),
       exclude_labels: strList(data.exclude_labels),
       exclude_areas: strList(data.exclude_areas),
       exclude_devices: strList(data.exclude_devices),
       exclude_companions: strList(data.exclude_companions),
+      exclude_assignees: strList(data.exclude_assignees),
       exclude_shopping: Boolean(data.exclude_shopping),
     },
   };

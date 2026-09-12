@@ -75,10 +75,12 @@ def normalize_filter(raw: Any) -> dict[str, Any]:
         "areas": _str_list(raw.get("areas")),
         "devices": _str_list(raw.get("devices")),
         "companions": _str_list(raw.get("companions")),
+        "assignees": _str_list(raw.get("assignees")),
         "exclude_labels": _str_list(raw.get("exclude_labels")),
         "exclude_areas": _str_list(raw.get("exclude_areas")),
         "exclude_devices": _str_list(raw.get("exclude_devices")),
         "exclude_companions": _str_list(raw.get("exclude_companions")),
+        "exclude_assignees": _str_list(raw.get("exclude_assignees")),
         "exclude_shopping": bool(raw.get("exclude_shopping")),
         "status": status if status in STATUSES else STATUS_OVERDUE,
     }
@@ -185,9 +187,11 @@ def matches_filter(
     """Whether *task* belongs to a profile's list under *filt* at *now*.
 
     A task qualifies only if it is live now: enabled and scheduled (a non-``None``
-    ``next_due``). On top of that it must clear the label/area/device filters (each is
-    an OR within the list, AND across the lists; an empty list means "any") and the
-    ``status`` due-state.
+    ``next_due``). On top of that it must clear the label/area/device/assignee filters
+    (each is an OR within the list, AND across the lists; an empty list means "any")
+    and the ``status`` due-state. ``assignees`` reads the task's own field directly (no
+    inheritance, unlike labels) — it is how a per-person Notification is built: filter
+    on ``assignees: [person.x]``, target that person's phone.
 
     A ``problem``-sensor-synced task is an ordinary member of that set. It is armed —
     ``next_due`` set to the moment the sensor went bad, so it reads as overdue — while
@@ -261,6 +265,10 @@ def matches_filter(
     companions = filt.get("companions") or []
     if companions and companion not in companions:
         return False
+    task_assignees = set(task.get("assignees") or [])
+    assignees = filt.get("assignees") or []
+    if assignees and not (task_assignees & set(assignees)):
+        return False
 
     # Exclusions are applied last and win: a task that cleared every include list is
     # still dropped if it carries an excluded label, sits in an excluded area, or hangs
@@ -274,6 +282,8 @@ def matches_filter(
     if area_id in (filt.get("exclude_areas") or []):
         return False
     if device_id in (filt.get("exclude_devices") or []):
+        return False
+    if task_assignees & set(filt.get("exclude_assignees") or []):
         return False
     # Shopping is excluded by *kind* rather than by id, because an auto-created buy
     # reminder carries no label or area of its own to name — it inherits the

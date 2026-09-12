@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…et {more} de plus",
   "all_clear_title": "Tout est à jour",
-  "all_clear_message": "Aucune tâche à faire pour le moment. 🎉"
+  "all_clear_message": "Aucune tâche à faire pour le moment. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

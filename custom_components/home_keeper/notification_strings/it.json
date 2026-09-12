@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…e altre {more}",
   "all_clear_title": "Tutto in ordine",
-  "all_clear_message": "Nessuna attività in scadenza al momento. 🎉"
+  "all_clear_message": "Nessuna attività in scadenza al momento. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

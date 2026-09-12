@@ -928,6 +928,102 @@ def test_merge_update_leaves_labels_untouched_when_absent():
     assert updated["labels"] == ["car"]
 
 
+# ── assignees (HA person entities a task is assigned to) ─────────────────────
+
+
+def test_build_task_normalizes_assignees():
+    # Assignees are de-duplicated and blank-stripped, order preserved.
+    task = m.build_task(
+        {
+            "name": "Vet visit",
+            "recurrence_type": "floating",
+            "interval": 6,
+            "unit": "months",
+            "assignees": ["person.krissell", "", "person.krissell", " person.angie "],
+        },
+        now=NOW,
+    )
+    assert task["assignees"] == ["person.krissell", "person.angie"]
+
+
+def test_build_task_defaults_assignees_to_empty():
+    task = m.build_task(
+        {
+            "name": "Mow lawn",
+            "recurrence_type": "floating",
+            "interval": 1,
+            "unit": "weeks",
+        },
+        now=NOW,
+    )
+    assert task["assignees"] == []
+
+
+def test_build_task_rejects_non_list_assignees():
+    with raises_exactly(
+        m.TaskValidationError, "assignees must be a list of person entity ids"
+    ):
+        m.build_task(
+            {
+                "name": "Bad",
+                "recurrence_type": "floating",
+                "interval": 1,
+                "unit": "weeks",
+                "assignees": {"not": "a list"},
+            },
+            now=NOW,
+        )
+
+
+def test_merge_update_sets_assignees_when_provided():
+    task = m.build_task(
+        {
+            "name": "Wash car",
+            "recurrence_type": "floating",
+            "interval": 2,
+            "unit": "weeks",
+        },
+        now=NOW,
+    )
+    updated = m.merge_update(
+        task,
+        {"assignees": ["person.krissell", "person.krissell", "person.angie"]},
+        now=NOW,
+    )
+    assert updated["assignees"] == ["person.krissell", "person.angie"]
+
+
+def test_merge_update_leaves_assignees_untouched_when_absent():
+    # A plain rename must not stamp/clear assignees (no phantom "assignees changed").
+    task = m.build_task(
+        {
+            "name": "Wash car",
+            "recurrence_type": "floating",
+            "interval": 2,
+            "unit": "weeks",
+            "assignees": ["person.krissell"],
+        },
+        now=NOW,
+    )
+    updated = m.merge_update(task, {"name": "Wash the car"}, now=NOW)
+    assert updated["assignees"] == ["person.krissell"]
+
+
+def test_merge_update_can_clear_assignees():
+    task = m.build_task(
+        {
+            "name": "Wash car",
+            "recurrence_type": "floating",
+            "interval": 2,
+            "unit": "weeks",
+            "assignees": ["person.krissell"],
+        },
+        now=NOW,
+    )
+    updated = m.merge_update(task, {"assignees": []}, now=NOW)
+    assert updated["assignees"] == []
+
+
 # ── card_links (appliance links surfaced on the dashboard card) ──────────────
 
 

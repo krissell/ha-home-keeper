@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…i {more} més",
   "all_clear_title": "Tot al dia",
-  "all_clear_message": "No hi ha cap tasca pendent ara mateix. 🎉"
+  "all_clear_message": "No hi ha cap tasca pendent ara mateix. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

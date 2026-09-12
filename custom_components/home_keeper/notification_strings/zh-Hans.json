@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…还有 {more} 项",
   "all_clear_title": "全部完成",
-  "all_clear_message": "目前没有待办任务。🎉"
+  "all_clear_message": "目前没有待办任务。🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

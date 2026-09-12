@@ -1234,10 +1234,12 @@ function addProfile(p: PanelHost): Promise<void> {
       areas: [],
       devices: [],
       companions: [],
+      assignees: [],
       exclude_labels: [],
       exclude_areas: [],
       exclude_devices: [],
       exclude_companions: [],
+      exclude_assignees: [],
       exclude_shopping: false,
     },
     // No list picked: the sync does nothing until one is, and both switches

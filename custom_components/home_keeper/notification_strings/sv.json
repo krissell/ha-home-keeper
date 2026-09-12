@@ -20,5 +20,8 @@
   "digest_item": "• {name}",
   "digest_more": "…och {more} till",
   "all_clear_title": "Allt klart",
-  "all_clear_message": "Inga uppgifter just nu. 🎉"
+  "all_clear_message": "Inga uppgifter just nu. 🎉",
+  "action_snooze_1h": "Snooze 1h",
+  "action_snooze_1d": "Snooze 1 day",
+  "action_snooze_1w": "Snooze 1 week"
 }

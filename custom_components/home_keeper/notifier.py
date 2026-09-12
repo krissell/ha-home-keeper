@@ -135,7 +135,7 @@ def _notification_profile(
 def _verb_allowed(coord: HomeKeeperCoordinator, verb: str) -> bool:
     """Whether the ``allow_snooze`` / ``allow_skip`` switch still permits *verb*."""
     opts = current_options(coord.entry)
-    if verb == notifications.ACTION_SNOOZE:
+    if verb in notifications.SNOOZE_ACTIONS:
         return bool(opts[OPTION_ALLOW_SNOOZE])
     if verb == notifications.ACTION_SKIP:
         return bool(opts[OPTION_ALLOW_SKIP])
@@ -484,20 +484,25 @@ def async_setup_notifications(
                 await coord.store.complete_task(
                     task_id, origin=ORIGIN_NOTIFICATION_ACTION
                 )
-            elif verb == notifications.ACTION_SNOOZE:
+            elif verb in notifications.SNOOZE_ACTIONS:
                 # A card already on someone's phone keeps whatever buttons it was
                 # built with, so a verb switched off since then can still be tapped.
                 # Ignore it the same way a stale completion tap is ignored, rather
                 # than honouring a button the setting has withdrawn. The exception in
                 # ``actions_for`` doesn't apply here: it exists so a *walk* can
                 # advance, and by this point the tap has already advanced it.
-                if not _verb_allowed(coord, notifications.ACTION_SNOOZE):
+                if not _verb_allowed(coord, verb):
                     return
-                hours = (
-                    notification["snooze_hours"]
-                    if notification
-                    else notifications.DEFAULT_SNOOZE_HOURS
-                )
+                # A fixed-duration button (snooze_1h/1d/1w) always defers by its own
+                # hour count; the plain "snooze" verb keeps deferring by the
+                # notification's configured snooze_hours, unchanged from before.
+                hours = notifications.SNOOZE_VERB_HOURS.get(verb)
+                if hours is None:
+                    hours = (
+                        notification["snooze_hours"]
+                        if notification
+                        else notifications.DEFAULT_SNOOZE_HOURS
+                    )
                 await coord.store.snooze_task(
                     task_id,
                     now + timedelta(hours=hours),

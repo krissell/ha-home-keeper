@@ -51,10 +51,27 @@ TARGET_PERSISTENT = "persistent_notification"
 # it's for. See docs/EVENTS.md and the `home_keeper.set_due_today` service,
 # which stays available either way.
 ACTION_COMPLETE = "complete"
-ACTION_SNOOZE = "snooze"
+ACTION_SNOOZE = "snooze"  # uses the notification's configured snooze_hours
 ACTION_SKIP = "skip"
 ACTION_OPEN = "open"
-ACTIONS = (ACTION_COMPLETE, ACTION_SNOOZE, ACTION_SKIP, ACTION_OPEN)
+
+# Fixed-duration snooze buttons: a notification's ``actions`` list can include any of
+# these alongside (or instead of) the plain ``snooze`` verb, so the notification itself
+# offers duration choices (1 hour / 1 day / 1 week) rather than always deferring by the
+# notification's single configured ``snooze_hours``. Each maps to its own fixed hour
+# count in SNOOZE_VERB_HOURS, independent of that setting. Kept to 3 — iOS shows only
+# ~3-4 actions total (see docs/ACTIONABLE_NOTIFICATIONS_PLAN.md), and a notification
+# already wants room for Mark done / Skip / Open alongside whichever of these it picks.
+ACTION_SNOOZE_1H = "snooze_1h"
+ACTION_SNOOZE_1D = "snooze_1d"
+ACTION_SNOOZE_1W = "snooze_1w"
+SNOOZE_ACTIONS = (ACTION_SNOOZE, ACTION_SNOOZE_1H, ACTION_SNOOZE_1D, ACTION_SNOOZE_1W)
+SNOOZE_VERB_HOURS: dict[str, int] = {
+    ACTION_SNOOZE_1H: 1,
+    ACTION_SNOOZE_1D: 24,
+    ACTION_SNOOZE_1W: 24 * 7,
+}
+ACTIONS = (ACTION_COMPLETE, *SNOOZE_ACTIONS, ACTION_SKIP, ACTION_OPEN)
 DEFAULT_ACTIONS = [ACTION_COMPLETE, ACTION_SNOOZE, ACTION_OPEN]
 
 # Per-notification delivery style.
@@ -422,11 +439,11 @@ def actions_for(
     kept = [
         verb
         for verb in actions
-        if (allow_snooze or verb != ACTION_SNOOZE)
+        if (allow_snooze or verb not in SNOOZE_ACTIONS)
         and (allow_skip or verb != ACTION_SKIP)
-        and (not blocked or verb in (ACTION_SNOOZE, ACTION_OPEN))
+        and (not blocked or verb in (*SNOOZE_ACTIONS, ACTION_OPEN))
     ]
-    if blocked and ACTION_SNOOZE not in kept:
+    if blocked and not (set(kept) & set(SNOOZE_ACTIONS)):
         # Deliberately overriding both the user's button set and the allow_snooze
         # switch — the one place this function adds rather than subtracts. `open` is a
         # client-side URI that never calls back, so a set of only `open` (or an empty
@@ -648,6 +665,10 @@ def _action_button(
     if verb == ACTION_SNOOZE:
         title = _t(lang, "action_snooze", hours=notification["snooze_hours"])
         return {"action": action_id, "title": title}
+    if verb in SNOOZE_VERB_HOURS:
+        # A fixed-duration snooze button. Its own translation key (not the generic
+        # "action_snooze" one) since it reads better as "Snooze 1 day" than "Snooze 24h".
+        return {"action": action_id, "title": _t(lang, f"action_{verb}")}
     if verb == ACTION_SKIP:
         return {"action": action_id, "title": _t(lang, "action_skip")}
     # open — a URI deep-link into the panel (handled client-side, no callback).
