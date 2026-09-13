@@ -58,6 +58,7 @@ from .const import (
     OPTION_ALLOW_DUE_TODAY,
     OPTION_ALLOW_SKIP,
     OPTION_ALLOW_SNOOZE,
+    OPTION_ASSIGNEE_TARGETS,
     OPTION_DISMISSED_COMPANIONS,
     OPTION_NOTIFICATIONS,
     OPTION_ONE_OFF_RETENTION_DAYS,
@@ -726,6 +727,10 @@ SET_OPTIONS_SCHEMA = vol.Schema(
         # happens in the matching profiles/notifications.normalize_* helper.
         vol.Optional(OPTION_PROFILES): list,
         vol.Optional(OPTION_NOTIFICATIONS): list,
+        # Assignee targets: the direct, Profile/Notification-free push path — a
+        # list of {person, targets}; normalization is
+        # notifications.normalize_assignee_targets.
+        vol.Optional(OPTION_ASSIGNEE_TARGETS): list,
     }
 )
 

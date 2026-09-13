@@ -65,6 +65,7 @@ import {
   navigateTo,
   partStockButtonStep,
   partStockStep,
+  personOptions,
   recurrenceSummary,
   round1,
   safeFileHref,
@@ -342,7 +343,14 @@ function taskDetail(p: PanelHost, task: Task): string {
     // so the form stays empty whether or not the integration is still loaded; Delete
     // comes back on its own below, which is the cleanup path an orphan needs.
     const fullyLocked =
-      !!mb && taskFormIsEmpty(task, consumableOptions(p, task), documentOptions(p, task), p._tags);
+      !!mb &&
+      taskFormIsEmpty(
+        task,
+        consumableOptions(p, task),
+        documentOptions(p, task),
+        p._tags,
+        personOptions(p._hass),
+      );
     const editBtn = fullyLocked
       ? `<span class="hk-managed-info">${escapeHTML(
           t('managed.allLocked', { name: mb.display_name }),

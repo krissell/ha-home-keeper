@@ -49,6 +49,7 @@ import {
   isOverdue,
   labelName,
   navigateTo,
+  personOptions,
   recurrenceSummary,
   safeFileHref,
   scanRequired,
@@ -1115,7 +1116,13 @@ export class HomeKeeperCard extends HTMLElement {
 
     const form = document.createElement('ha-form') as HaFormElement;
     form.hass = this._hass;
-    form.schema = taskSchema(task) as unknown[];
+    form.schema = taskSchema(
+      task,
+      [],
+      [],
+      [],
+      personOptions(this._hass),
+    ) as unknown[];
     form.data = taskFormData(task);
     // Season windows repeat one control, so every window reads one set of labels.
     form.computeLabel = (s: { name: string }): string =>

@@ -215,6 +215,9 @@ _PROBES: dict[str, Any] = {
     const.OPTION_DISMISSED_COMPANIONS: ["some_domain"],
     const.OPTION_PROFILES: [{"id": "px", "name": "X", "filter": {"status": "all"}}],
     const.OPTION_NOTIFICATIONS: [{"id": "nx", "name": "X", "profile_id": "px"}],
+    const.OPTION_ASSIGNEE_TARGETS: [
+        {"person": "person.x", "targets": ["mobile_app_x"]}
+    ],
 }
 
 
@@ -376,6 +379,7 @@ def test_the_defaults_change_nothing_for_an_unconfigured_entry() -> None:
         "shopping_list_entity": "",
         "profiles": [],
         "notifications": [],
+        "assignee_targets": [],
         "problem_sensor_exclude_entities": [],
         "problem_sensor_exclude_devices": [],
         "problem_sensor_exclude_areas": [],

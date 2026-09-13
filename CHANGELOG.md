@@ -6,6 +6,15 @@ All notable changes to Home Keeper are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
 
+## [0.24.0b6]
+
+### Added
+
+- **Direct assignee notifications.** Assign a task to a person, or to "All," and
+  Home Keeper pushes straight to their phone when it goes overdue or due soon. No
+  profile or notification setup is needed, and a person can carry more than one
+  phone.
+
 ## [0.24.0b5]
 
 ### Changed

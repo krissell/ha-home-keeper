@@ -451,6 +451,15 @@ export const STYLES = `
     color: var(--hk-ink-2); font-size: 0.9rem;
     margin-bottom: 16px; line-height: 1.4;
   }
+  /* A second, unrelated list nested in the same card (e.g. direct assignee
+     notifications under Notifications) gets its own rule and label rather than
+     reading as a continuation of the list above it. */
+  .hk-settings-divider {
+    border-top: 1px solid var(--divider-color); margin: 20px 0 16px;
+  }
+  .hk-settings-subheading {
+    font-size: 0.95rem; font-weight: 500; color: var(--hk-ink); margin-bottom: 6px;
+  }
   /* What this section is currently set to, stated under its name so the page can be
      read without opening anything. */
   .hk-settings-value {

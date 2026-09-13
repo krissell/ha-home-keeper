@@ -383,6 +383,7 @@ export function taskSchemaSections(
   consumables: { value: string; label: string }[] = [],
   links: { value: string; label: string }[] = [],
   tags: { value: string; label: string }[] = [],
+  people: { value: string; label: string }[] = [],
 ): TaskSchemaSection[] {
   const locked = new Set<string>((task as Task).managed_by?.locked_fields ?? []);
 
@@ -435,7 +436,7 @@ export function taskSchemaSections(
             ? [{ name: 'labels', selector: selLabel(true) } as FormField]
             : []),
           ...(!locked.has('assignees')
-            ? [{ name: 'assignees', selector: selEntity({ domain: 'person' }, true) } as FormField]
+            ? [{ name: 'assignees', selector: selSelect(people, true) } as FormField]
             : []),
           ...cardLinksField,
         ],
@@ -672,7 +673,7 @@ export function taskSchemaSections(
       : []),
     ...(!locked.has('labels') ? [{ name: 'labels', selector: selLabel(true) } as FormField] : []),
     ...(!locked.has('assignees')
-      ? [{ name: 'assignees', selector: selEntity({ domain: 'person' }, true) } as FormField]
+      ? [{ name: 'assignees', selector: selSelect(people, true) } as FormField]
       : []),
     ...cardLinksField,
   ];
@@ -761,8 +762,11 @@ export function taskSchema(
   consumables: { value: string; label: string }[] = [],
   links: { value: string; label: string }[] = [],
   tags: { value: string; label: string }[] = [],
+  people: { value: string; label: string }[] = [],
 ): FormField[] {
-  return taskSchemaSections(task, consumables, links, tags).flatMap((s) => s.fields);
+  return taskSchemaSections(task, consumables, links, tags, people).flatMap(
+    (s) => s.fields,
+  );
 }
 
 /**
@@ -788,8 +792,11 @@ export function taskFormIsEmpty(
   consumables: { value: string; label: string }[],
   links: { value: string; label: string }[],
   tags: { value: string; label: string }[],
+  people: { value: string; label: string }[] = [],
 ): boolean {
-  return taskSchemaSections(task, consumables, links, tags).every((s) => !s.fields.length);
+  return taskSchemaSections(task, consumables, links, tags, people).every(
+    (s) => !s.fields.length,
+  );
 }
 
 /** Map a task onto the `ha-form` data object (selector-shaped values). */
@@ -2200,6 +2207,21 @@ export function notificationProfileSchema(profiles: Profile[]): FormField[] {
       name: 'profile_id',
       required: true,
       selector: selSelect(profiles.map((p) => ({ value: p.id, label: p.name }))),
+    },
+  ];
+}
+
+/** One row of the direct assignee -> phone mapping: who, and which phone(s) of
+ *  theirs. `targets` allows more than one, for someone carrying 2 devices. */
+export function assigneeTargetSchema(targets: string[]): FormField[] {
+  return [
+    { name: 'person', required: true, selector: selEntity({ domain: 'person' }) },
+    {
+      name: 'targets',
+      selector: selSelect(
+        targets.map((tg) => ({ value: tg, label: tg })),
+        true,
+      ),
     },
   ];
 }

@@ -25,8 +25,11 @@ from homeassistant.util import dt as dt_util
 
 from . import notifications, profiles, recurrence
 from .const import (
+    EVENT_TASK_DUE_SOON,
+    EVENT_TASK_OVERDUE,
     OPTION_ALLOW_SKIP,
     OPTION_ALLOW_SNOOZE,
+    OPTION_ASSIGNEE_TARGETS,
     OPTION_NOTIFICATIONS,
     OPTION_PROFILES,
     ORIGIN_NOTIFICATION_ACTION,
@@ -69,6 +72,11 @@ def _profiles(entry: ConfigEntry) -> list[dict[str, Any]]:
 
 def _notifications(entry: ConfigEntry) -> list[dict[str, Any]]:
     value = current_options(entry).get(OPTION_NOTIFICATIONS, [])
+    return value if isinstance(value, list) else []
+
+
+def _assignee_targets(entry: ConfigEntry) -> list[dict[str, Any]]:
+    value = current_options(entry).get(OPTION_ASSIGNEE_TARGETS, [])
     return value if isinstance(value, list) else []
 
 
@@ -324,6 +332,71 @@ async def async_send_auto(
             "due_soon" in fired_kinds and auto["due_soon"]
         ):
             await async_send_for_notification(hass, coord, notification, reason="auto")
+
+
+async def async_send_direct_assignees(
+    hass: HomeAssistant,
+    coord: HomeKeeperCoordinator,
+    fired: list[tuple[str, dict[str, Any]]],
+) -> None:
+    """Push straight to each fired task's assignees — no Profile/Notification.
+
+    Independent of (and additional to) the Profile-based :func:`async_send_auto`:
+    reads the ``assignee_targets`` mapping (person -> notify targets) and, for each
+    ``(event_name, payload)`` in *fired* that is an overdue/due-soon crossing, looks
+    up the live task by ``payload["task_id"]`` and sends one actionable notification
+    straight to each of its assignees' targets. ``"all"`` in a task's ``assignees``
+    expands to every configured person — see ``notifications.resolve_assignee_targets``.
+
+    Reacts only to the tasks that just crossed the edge in *this* refresh (unlike
+    ``async_send_auto``, which re-sends whatever a Profile's whole queue currently
+    holds), so a household member is pinged once per task per crossing rather than
+    re-pinged every time some unrelated task changes.
+
+    A synthetic notification id (``direct-<task_id>-<person>``) stands in for a
+    stored Notification: :func:`notifications.build_notification` and
+    ``async_setup_notifications``'s action listener both already handle "no such
+    notification on record" gracefully (buttons still work; there's just no walk to
+    advance), so nothing needs to be stored for this to round-trip.
+    """
+    mapping = _assignee_targets(coord.entry)
+    if not mapping:
+        return
+    kinds = {EVENT_TASK_OVERDUE: "overdue", EVENT_TASK_DUE_SOON: "due_soon"}
+    relevant = [payload for name, payload in fired if name in kinds]
+    if not relevant:
+        return
+    tasks = coord.store.get_tasks()
+    now = dt_util.now()
+    lang = hass.config.language
+    opts = current_options(coord.entry)
+    allow_snooze = bool(opts[OPTION_ALLOW_SNOOZE])
+    allow_skip = bool(opts[OPTION_ALLOW_SKIP])
+    for payload in relevant:
+        task_id = payload.get("task_id")
+        task = tasks.get(task_id) if task_id else None
+        if task is None:
+            continue
+        assignees = task.get("assignees") or []
+        if not assignees:
+            continue
+        targets_by_person = notifications.resolve_assignee_targets(assignees, mapping)
+        for person, targets in targets_by_person.items():
+            notification = notifications.normalize_notification(
+                {"id": f"direct-{task_id}-{person}", "targets": targets}
+            )
+            built = await hass.async_add_executor_job(
+                functools.partial(
+                    notifications.build_notification,
+                    task,
+                    notification=notification,
+                    now=now,
+                    lang=lang,
+                    allow_snooze=allow_snooze,
+                    allow_skip=allow_skip,
+                )
+            )
+            await _send_payload(hass, targets, built)
 
 
 async def async_run_notify(

@@ -1,5 +1,5 @@
 import { t, tn } from './i18n';
-import type { Asset, Hass, HassArea, HassLabel, Part, Task } from './types';
+import { ASSIGNEE_ALL, type Asset, type Hass, type HassArea, type HassLabel, type Part, type Task } from './types';
 
 /** Home Keeper's own integration domain (`const.DOMAIN`). A task Home Keeper syncs
  *  or materializes itself carries it in `managed_by.integration`, which is how the
@@ -1046,6 +1046,22 @@ export function tagName(
 export function personName(hass: Hass | undefined, entityId: string): string {
   const friendly = hass?.states?.[entityId]?.attributes?.friendly_name;
   return typeof friendly === 'string' && friendly ? friendly : entityId;
+}
+
+/**
+ * Options for a task's "Assign to" picker: every `person.*` entity, sorted by
+ * friendly name, with a leading `ASSIGNEE_ALL` entry so a task shared by the whole
+ * household needs one pick rather than naming everyone. A plain dropdown
+ * (`selSelect`) rather than the native entity picker — the "All" entry has no
+ * entity behind it for that picker to resolve.
+ */
+export function personOptions(hass: Hass | undefined): { value: string; label: string }[] {
+  const states = hass?.states ?? {};
+  const people = Object.keys(states)
+    .filter((id) => id.startsWith('person.'))
+    .map((id) => ({ value: id, label: personName(hass, id) }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  return [{ value: ASSIGNEE_ALL, label: t('assignee.all') }, ...people];
 }
 
 /**

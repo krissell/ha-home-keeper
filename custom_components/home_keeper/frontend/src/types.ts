@@ -559,6 +559,20 @@ export interface Notification {
   auto: { overdue: boolean; due_soon: boolean };
 }
 
+/** Reserved pseudo-assignee inside a task's `assignees`: "every person configured
+ *  in `assignee_targets`," rather than one specific `person.*` id. Mirrors the
+ *  backend's `const.ASSIGNEE_ALL`. Can't collide with a real assignee — person
+ *  entity ids always carry the `person.` domain prefix, and this doesn't. */
+export const ASSIGNEE_ALL = 'all';
+
+/** One row of the direct assignee -> phone mapping (`assignee_targets`): the
+ *  Profile/Notification-free push path. `targets` is a list so one person can carry
+ *  more than one phone/tablet. See backend `notifications.normalize_assignee_targets`. */
+export interface AssigneeTarget {
+  person: string;
+  targets: string[];
+}
+
 /** Integration-wide options, edited from the panel's Settings tab (and mirrored by
  *  the options flow + the `home_keeper.set_options` service). */
 export interface HomeKeeperOptions {
@@ -584,6 +598,8 @@ export interface HomeKeeperOptions {
   // that consume them.
   profiles: Profile[];
   notifications: Notification[];
+  // The direct assignee -> phone mapping (Profile/Notification-free push path).
+  assignee_targets: AssigneeTarget[];
 }
 
 /**

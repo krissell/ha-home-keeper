@@ -31,6 +31,7 @@ from .const import (
     OPTION_ALLOW_DUE_TODAY,
     OPTION_ALLOW_SKIP,
     OPTION_ALLOW_SNOOZE,
+    OPTION_ASSIGNEE_TARGETS,
     OPTION_DISMISSED_COMPANIONS,
     OPTION_NOTIFICATIONS,
     OPTION_ONE_OFF_RETENTION_DAYS,
@@ -91,6 +92,7 @@ def _empty_options() -> dict[str, Any]:
         OPTION_SHOPPING_LIST_ENTITY: "",
         OPTION_PROFILES: [],
         OPTION_NOTIFICATIONS: [],
+        OPTION_ASSIGNEE_TARGETS: [],
         **{key: [] for key in _LIST_OPTIONS},
     }
 
@@ -189,6 +191,10 @@ def _normalize(updates: dict[str, Any], base: dict[str, Any]) -> dict[str, Any]:
     if OPTION_NOTIFICATIONS in updates:
         merged[OPTION_NOTIFICATIONS] = notifications.normalize_notifications(
             updates[OPTION_NOTIFICATIONS]
+        )
+    if OPTION_ASSIGNEE_TARGETS in updates:
+        merged[OPTION_ASSIGNEE_TARGETS] = notifications.normalize_assignee_targets(
+            updates[OPTION_ASSIGNEE_TARGETS]
         )
     for key in _LIST_OPTIONS:
         if key in updates:

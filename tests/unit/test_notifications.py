@@ -238,6 +238,65 @@ def test_split_targets_rejects_a_lookalike_prefix():
     assert rejected == ["notify_mobile_app_phone", "MOBILE_APP_x"]
 
 
+def test_normalize_assignee_target_drops_unnamed_person():
+    assert n.normalize_assignee_target({"targets": ["mobile_app_x"]}) is None
+    blank_person = {"person": "", "targets": ["mobile_app_x"]}
+    assert n.normalize_assignee_target(blank_person) is None
+    assert n.normalize_assignee_target("junk") is None
+
+
+def test_normalize_assignee_target_filters_targets_through_the_allowlist(caplog):
+    row = n.normalize_assignee_target(
+        {"person": "person.dan", "targets": ["mobile_app_dan", "smtp_family"]}
+    )
+    assert row == {"person": "person.dan", "targets": ["mobile_app_dan"]}
+    assert "smtp_family" in caplog.text
+
+
+def test_normalize_assignee_targets_dedupes_by_person_last_write_wins():
+    rows = n.normalize_assignee_targets(
+        [
+            {"person": "person.dan", "targets": ["mobile_app_old"]},
+            {"person": ""},  # dropped: no person
+            {"person": "person.dan", "targets": ["mobile_app_new"]},
+        ]
+    )
+    assert rows == [{"person": "person.dan", "targets": ["mobile_app_new"]}]
+
+
+def test_normalize_assignee_targets_on_junk_input():
+    assert n.normalize_assignee_targets(None) == []
+    assert n.normalize_assignee_targets("junk") == []
+
+
+def test_resolve_assignee_targets_plain_lookup():
+    mapping = [
+        {"person": "person.dan", "targets": ["mobile_app_dan"]},
+        {"person": "person.angie", "targets": ["mobile_app_angie"]},
+    ]
+    assert n.resolve_assignee_targets(["person.dan"], mapping) == {
+        "person.dan": ["mobile_app_dan"]
+    }
+
+
+def test_resolve_assignee_targets_unmapped_person_resolves_to_nothing():
+    mapping = [{"person": "person.dan", "targets": ["mobile_app_dan"]}]
+    assert n.resolve_assignee_targets(["person.unknown"], mapping) == {}
+
+
+def test_resolve_assignee_targets_all_expands_to_every_configured_person():
+    mapping = [
+        {"person": "person.dan", "targets": ["mobile_app_dan"]},
+        {"person": "person.angie", "targets": ["mobile_app_angie"]},
+    ]
+    # "all" short-circuits: naming another assignee alongside it is redundant.
+    resolved = n.resolve_assignee_targets(["person.dan", n.ASSIGNEE_ALL], mapping)
+    assert resolved == {
+        "person.dan": ["mobile_app_dan"],
+        "person.angie": ["mobile_app_angie"],
+    }
+
+
 def test_normalize_notification_drops_unsupported_targets(caplog):
     # The confused-deputy fix: a stored notification cannot route Home-Keeper-authored
     # text through an admin's SMTP/Telegram service just because something wrote that

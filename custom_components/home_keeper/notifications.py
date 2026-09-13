@@ -28,6 +28,7 @@ from typing import Any
 from babel import Locale
 from babel.core import UnknownLocaleError
 
+from .const import ASSIGNEE_ALL
 from .transitions import DUE_SOON_WINDOW
 
 _LOGGER = logging.getLogger(__name__)
@@ -263,6 +264,71 @@ def split_targets(value: Any) -> tuple[list[str], list[str]]:
     for target in _str_list(value):
         (accepted if is_allowed_target(target) else rejected).append(target)
     return accepted, rejected
+
+
+def normalize_assignee_target(raw: Any) -> dict[str, Any] | None:
+    """Coerce one raw ``assignee_targets`` row to ``{person, targets}``, or ``None``.
+
+    ``None`` for a row with no ``person`` — it names nobody to deliver to, so it is
+    dropped rather than repaired, unlike every other normalizer in this module.
+    ``targets`` reuses :func:`split_targets`, the same ``mobile_app_*`` /
+    ``persistent_notification`` allowlist a stored Notification's targets go through.
+    """
+    raw = raw if isinstance(raw, dict) else {}
+    person = str(raw.get("person") or "").strip()
+    if not person:
+        return None
+    targets, rejected = split_targets(raw.get("targets"))
+    if rejected:
+        _LOGGER.warning(
+            "Home Keeper dropped assignee target(s) %s for %s: only %s* and %s "
+            "are supported",
+            ", ".join(rejected),
+            person,
+            TARGET_PREFIX,
+            TARGET_PERSISTENT,
+        )
+    return {"person": person, "targets": targets}
+
+
+def normalize_assignee_targets(raw: Any) -> list[dict[str, Any]]:
+    """Coerce the stored ``assignee_targets`` list, deduped by person (last wins).
+
+    An empty result is the feature's off switch: :func:`resolve_assignee_targets`
+    (and the direct-send path in ``notifier.py``) treats "nobody configured" as
+    "nothing to do", so a household that never opens this section sees no change in
+    behavior.
+    """
+    if not isinstance(raw, (list, tuple)):
+        return []
+    by_person: dict[str, dict[str, Any]] = {}
+    for item in raw:
+        row = normalize_assignee_target(item)
+        if row is not None:
+            by_person[row["person"]] = row
+    return list(by_person.values())
+
+
+def resolve_assignee_targets(
+    assignees: list[str], mapping: list[dict[str, Any]]
+) -> dict[str, list[str]]:
+    """Return ``{person: targets}`` for the people a task's ``assignees`` reach.
+
+    Plain lookup for a real ``person.*`` id. :data:`ASSIGNEE_ALL` short-circuits to
+    *every* configured person, ignoring the rest of *assignees* — once "All" is
+    picked, naming anyone else alongside it is redundant. A person in *assignees*
+    with no row in *mapping* (never configured, or configured with every target
+    rejected) resolves to nothing, silently — not a misconfiguration, just a person
+    who hasn't set up a phone yet.
+    """
+    if ASSIGNEE_ALL in assignees:
+        return {row["person"]: row["targets"] for row in mapping if row["targets"]}
+    by_person = {row["person"]: row["targets"] for row in mapping}
+    return {
+        person: by_person[person]
+        for person in dict.fromkeys(assignees)
+        if by_person.get(person)
+    }
 
 
 def normalize_icon(value: Any) -> str:
@@ -666,8 +732,9 @@ def _action_button(
         title = _t(lang, "action_snooze", hours=notification["snooze_hours"])
         return {"action": action_id, "title": title}
     if verb in SNOOZE_VERB_HOURS:
-        # A fixed-duration snooze button. Its own translation key (not the generic
-        # "action_snooze" one) since it reads better as "Snooze 1 day" than "Snooze 24h".
+        # A fixed-duration snooze button. Its own translation key (not the
+        # generic "action_snooze" one) since it reads better as "Snooze 1 day"
+        # than "Snooze 24h".
         return {"action": action_id, "title": _t(lang, f"action_{verb}")}
     if verb == ACTION_SKIP:
         return {"action": action_id, "title": _t(lang, "action_skip")}

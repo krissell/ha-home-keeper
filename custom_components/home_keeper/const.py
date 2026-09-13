@@ -8,7 +8,7 @@ PLATFORMS = ["todo", "calendar", "button", "sensor", "binary_sensor", "number"]
 # Frontend panel.
 # PANEL_VERSION is the single source of truth that release.yml validates against
 # manifest.json's "version" (mirrors Pawsistant's CARD_VERSION check).
-PANEL_VERSION = "0.24.0b5"
+PANEL_VERSION = "0.24.0b6"
 PANEL_URL_PATH = "home-keeper"  # sidebar route -> /home-keeper
 PANEL_STATIC_URL = "/home_keeper_panel"  # static path that serves the JS bundle
 PANEL_JS_FILENAME = "home-keeper-panel.js"
@@ -292,6 +292,20 @@ OPTION_PROFILES = "profiles"
 # consumed by the notify service, the action listener, and the coordinator's automatic
 # source. See notifications.py and docs/PROFILES_REFACTOR_PLAN.md.
 OPTION_NOTIFICATIONS = "notifications"
+# Assignee targets: a direct, Profile/Notification-free delivery path. A list of
+# ``{person, targets}`` (a ``person.*`` entity id and its ``mobile_app_*``/
+# ``persistent_notification`` targets — more than one covers someone with 2 phones).
+# When a task with a matching assignee crosses into overdue/due-soon, the
+# coordinator's automatic source pushes straight to these targets, no Profile or
+# Notification required. An empty list (the default) leaves the feature dormant. See
+# notifications.py (normalize/resolve) and notifier.py (async_send_direct_assignees).
+OPTION_ASSIGNEE_TARGETS = "assignee_targets"
+# Reserved pseudo-assignee inside a task's ``assignees`` list, meaning "every person
+# configured in OPTION_ASSIGNEE_TARGETS" rather than one specific ``person.*`` id.
+# Never collides with a real assignee: person entity ids always carry the ``person.``
+# domain prefix, and this doesn't. Recognized only by the direct-send path above —
+# profiles.matches_filter's assignee filtering is unaware of it on purpose.
+ASSIGNEE_ALL = "all"
 # An existing Home Assistant to-do list (a ``todo.*`` entity id) that auto-buy
 # reminders are mirrored onto — a shopping list, so "go buy more" reaches voice
 # assistants and list widgets. ``""`` (the default) turns the mirror off. The

@@ -24,6 +24,7 @@ import { PANEL_VERSION } from 'panel-version';
 import * as api from './api';
 import { profileHasAnyTask } from './card-filter';
 import {
+  assigneeTargetSchema,
   companionOptions,
   generalSchema,
   notificationDeliverySchema,
@@ -55,20 +56,24 @@ import {
   NOTIFY_AUTOMATION_DOCS_URL,
   TRANSFER_DOCS_URL,
 } from './panel-icons';
-import type {
-  Companion,
-  HomeKeeperOptions,
-  ImportReport,
-  Notification,
-  NotifyRunOptions,
-  Profile,
-  ProfileSync,
+import {
+  ASSIGNEE_ALL,
+  type AssigneeTarget,
+  type Companion,
+  type HomeKeeperOptions,
+  type ImportReport,
+  type Notification,
+  type NotifyRunOptions,
+  type Profile,
+  type ProfileSync,
 } from './types';
 import {
   btnAttrs,
   escapeHTML,
   navigateTo,
   notifyRowChip,
+  personName,
+  personOptions,
   setBtnWeight,
   toast,
   type SettingsSection,
@@ -281,6 +286,7 @@ function renderSettingsForm(p: PanelHost, host: HTMLElement): void {
     shopping_list_entity: '',
     profiles: [],
     notifications: [],
+    assignee_targets: [],
     // All three verbs predate the switch, so "not configured" means on. This
     // fallback is only reached before the first load answers; `skipSnoozeFlags` is
     // what reads them once options are in hand.
@@ -887,13 +893,16 @@ function itemCard(o: {
 
 /** The two option lists the Settings tab edits. The options key is also the debounce
  *  key, which is what lets one helper serve both. */
-type OptionListKey = 'profiles' | 'notifications';
+type OptionListKey = 'profiles' | 'notifications' | 'assignee_targets';
 
 /** The card each option list is rendered into, so a row's save can report itself
- *  against the section the user is looking at. */
+ *  against the section the user is looking at. `assignee_targets` shares the
+ *  Notifications card — it's a second, simpler list nested in the same section
+ *  rather than a Settings section of its own. */
 const LIST_CARD_ID: Record<OptionListKey, string> = {
   profiles: 'hk-profiles',
   notifications: 'hk-notifications',
+  assignee_targets: 'hk-notifications',
 };
 
 /**
@@ -943,7 +952,7 @@ function claimSave(p: PanelHost, key: OptionListKey): () => boolean {
 async function persistOptionList(
   p: PanelHost,
   key: OptionListKey,
-  list: Profile[] | Notification[],
+  list: Profile[] | Notification[] | AssigneeTarget[],
   render: boolean,
   opts: { expandLast?: boolean; rollbackOnFailure?: boolean } = {},
 ): Promise<void> {
@@ -965,7 +974,9 @@ async function persistOptionList(
       // not: the second answer holds both new rows, so the first add would expand the
       // second one's row. The `id` guard drops the blank an add sends before the
       // backend has named it, which would otherwise sit in the set forever.
-      const saved: { id: string }[] = merged[key] ?? [];
+      // Only 'profiles'/'notifications' ever pass expandLast: true (assignee_targets
+      // rows have no id to expand into — see assigneeTargetRow), so the cast is safe.
+      const saved = (merged[key] as unknown as { id: string }[] | undefined) ?? [];
       const last = saved[saved.length - 1];
       if (last?.id) p._itemExpanded.add(last.id);
     }
@@ -1014,7 +1025,7 @@ function persistDebounced(
   p: PanelHost,
   key: OptionListKey,
   itemId: string,
-  buildList: () => Profile[] | Notification[],
+  buildList: () => Profile[] | Notification[] | AssigneeTarget[],
 ): void {
   p._debounce(`${key}:${itemId}`, () => void persistOptionList(p, key, buildList(), false));
 }
@@ -1341,8 +1352,105 @@ function renderNotifications(p: PanelHost, host: HTMLElement): void {
       if (!profiles.length) add.setAttribute('disabled', '');
       add.addEventListener('click', () => void addNotification(p));
       body.appendChild(add);
+
+      assigneeTargetsBlock(p, body);
     },
   );
+}
+
+// ── direct assignee notifications ───────────────────────────────────────────
+
+/**
+ * A second, simpler list nested in the same Notifications card: the direct
+ * assignee -> phone mapping (`assignee_targets`). Unlike the list above, a row
+ * here needs no Profile or Notification — a task's own `assignees` (including
+ * "All") is matched straight against this table when it goes overdue/due soon.
+ * See backend `notifier.async_send_direct_assignees`.
+ */
+function assigneeTargetsBlock(p: PanelHost, body: HTMLElement): void {
+  const rows = p._options?.assignee_targets ?? [];
+  const divider = document.createElement('div');
+  divider.className = 'hk-settings-divider';
+  body.appendChild(divider);
+  const heading = document.createElement('div');
+  heading.className = 'hk-settings-subheading';
+  heading.textContent = t('notify.assignee_targets_heading');
+  body.appendChild(heading);
+  const help = document.createElement('div');
+  help.className = 'hk-settings-intro';
+  help.textContent = t('notify.assignee_targets_help');
+  body.appendChild(help);
+  rows.forEach((row, index) => body.appendChild(assigneeTargetRow(p, row, index)));
+  const add = document.createElement('ha-button');
+  add.id = 'hk-assignee-target-add';
+  add.className = 'hk-notify-add';
+  setBtnWeight(add, 'secondary');
+  add.textContent = t('notify.add_assignee_target');
+  if (!p._notifyTargets.length) add.setAttribute('disabled', '');
+  add.addEventListener('click', () => void addAssigneeTarget(p));
+  body.appendChild(add);
+}
+
+function assigneeTargetRow(p: PanelHost, row: AssigneeTarget, index: number): HTMLElement {
+  const key = `assignee-target:${index}`;
+  return itemCard({
+    className: 'hk-item-card',
+    name: row.person ? personName(p._hass, row.person) : t('notify.assignee_target_new'),
+    isOpen: () => p._itemExpanded.has(key),
+    setOpen: (open) => {
+      if (open) p._itemExpanded.add(key);
+      else p._itemExpanded.delete(key);
+    },
+    onDelete: () => void deleteAssigneeTarget(p, index),
+    fill: (body, nameSpan) => {
+      const schema = assigneeTargetSchema(p._notifyTargets);
+      let data: Record<string, unknown> = { person: row.person, targets: row.targets };
+      body.appendChild(
+        p._makeForm(
+          schema,
+          data,
+          (value) => {
+            data = value;
+            if (typeof value.person === 'string' && value.person) {
+              nameSpan.textContent = personName(p._hass, value.person);
+            }
+            persistDebounced(p, 'assignee_targets', key, () =>
+              (p._options?.assignee_targets ?? []).map((x, i) =>
+                i === index
+                  ? {
+                      person: String(data.person ?? ''),
+                      targets: Array.isArray(data.targets) ? (data.targets as string[]) : [],
+                    }
+                  : x,
+              ),
+            );
+          },
+          {
+            computeLabel: (s: { name: string }): string => t('notify.' + s.name),
+          },
+        ),
+      );
+    },
+  });
+}
+
+/** Defaults the new row to a real person (mirroring `addNotification`'s default
+ *  profile) — a person-less row is dropped by the backend's normalizer, so a
+ *  literally blank one would round-trip to nothing and the Add button would look
+ *  like it did nothing. No-op when the household has no `person.*` entity yet. */
+function addAssigneeTarget(p: PanelHost): Promise<void> {
+  const people = personOptions(p._hass).filter((o) => o.value !== ASSIGNEE_ALL);
+  if (!people.length) return Promise.resolve();
+  const blank: AssigneeTarget = { person: people[0].value, targets: [] };
+  const next = [...(p._options?.assignee_targets ?? []), blank];
+  p._itemExpanded.add(`assignee-target:${next.length - 1}`);
+  return persistOptionList(p, 'assignee_targets', next, true);
+}
+
+function deleteAssigneeTarget(p: PanelHost, index: number): Promise<void> {
+  p._itemExpanded.delete(`assignee-target:${index}`);
+  const next = (p._options?.assignee_targets ?? []).filter((_, i) => i !== index);
+  return persistOptionList(p, 'assignee_targets', next, true, { rollbackOnFailure: true });
 }
 
 function notificationEditor(

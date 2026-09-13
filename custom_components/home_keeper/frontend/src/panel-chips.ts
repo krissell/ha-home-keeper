@@ -14,7 +14,7 @@ import { taskAreaId } from './card-filter';
 import { t } from './i18n';
 import type { PanelHost } from './panel-host';
 import { MDI_DEVICES } from './panel-icons';
-import type { Asset, Task } from './types';
+import { ASSIGNEE_ALL, type Asset, type Task } from './types';
 import {
   HK_DOMAIN,
   areaName,
@@ -124,8 +124,12 @@ export function tagChip(p: PanelHost, task: Task): string {
  */
 export function assigneeChips(p: PanelHost, task: Task): string[] {
   return (task.assignees ?? []).map((entityId) => {
-    const name = personName(p._hass, entityId);
-    const icon = `<ha-icon slot="icon" icon="mdi:account" class="hk-chip-ic"></ha-icon>`;
+    // ASSIGNEE_ALL has no person entity behind it to resolve — name and icon it
+    // directly rather than falling through personName()'s raw-id fallback.
+    const isAll = entityId === ASSIGNEE_ALL;
+    const name = isAll ? t('assignee.all') : personName(p._hass, entityId);
+    const iconName = isAll ? 'mdi:account-group' : 'mdi:account';
+    const icon = `<ha-icon slot="icon" icon="${iconName}" class="hk-chip-ic"></ha-icon>`;
     return `<ha-assist-chip label="${escapeHTML(name)}" title="${escapeHTML(
       t('chip.assignee.tip'),
     )}">${icon}</ha-assist-chip>`;

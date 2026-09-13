@@ -245,6 +245,7 @@ class HomeKeeperCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             fired_kinds = {kinds[name] for name, _ in fired if name in kinds}
             if fired_kinds:
                 await notifier.async_send_auto(self.hass, self, fired_kinds)
+                await notifier.async_send_direct_assignees(self.hass, self, fired)
         elif not self._had_prior_edge_state:
             # Fresh start (HA restart / first setup): adopt the detected state as the
             # silent baseline so a task already overdue at startup doesn't replay.

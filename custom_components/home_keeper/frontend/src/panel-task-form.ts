@@ -36,7 +36,14 @@ import type { PanelHost } from './panel-host';
 import { MDI_CLOSE, SENSOR_DOCS_URL } from './panel-icons';
 import { isDisplayableDocument, documentLabel } from './documents';
 import type { Asset, Task } from './types';
-import { assetsForTask, escapeHTML, formatQuantity, safeHref, setBtnWeight } from './utils';
+import {
+  assetsForTask,
+  escapeHTML,
+  formatQuantity,
+  personOptions,
+  safeHref,
+  setBtnWeight,
+} from './utils';
 
 /**
  * One active-season window: a numbered heading, Remove when there is more than one
@@ -432,6 +439,7 @@ export function renderTaskForm(p: PanelHost, host: HTMLElement): void {
     consumableOptions(p, task),
     documentOptions(p, task),
     p._tags,
+    personOptions(p._hass),
   );
   // The form seeds defaults the edit state does not carry — a fresh sensor task
   // shows "on" as the state it waits for, without that ever having been typed.
