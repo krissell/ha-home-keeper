@@ -1642,6 +1642,7 @@ describe('duplicateTaskSeed — a copy of the rule, not of the record (#279)', (
     device_id: 'dev1',
     area_id: 'area1',
     labels: ['lbl1', 'lbl2'],
+    assignees: ['person.dan', 'person.angie'],
     card_links: [{ asset_id: 'a1', entry_id: 'e1' }],
     completion_detail: 'required',
     enabled: true,
@@ -1765,12 +1766,15 @@ describe('duplicateTaskSeed — a copy of the rule, not of the record (#279)', (
     expect(duplicateTaskSeed(floating).consumable_link).toBe('');
   });
 
-  it('copies the label and card-link collections rather than sharing them', () => {
+  it('copies the label, assignee and card-link collections rather than sharing them', () => {
     const seed = duplicateTaskSeed(floating);
     expect(seed.labels).toEqual(['lbl1', 'lbl2']);
+    expect(seed.assignees).toEqual(['person.dan', 'person.angie']);
     expect(seed.card_links).toEqual(['a1:e1']);
     seed.labels.push('lbl3');
     expect(floating.labels).toEqual(['lbl1', 'lbl2']);
+    seed.assignees.push('person.stray');
+    expect(floating.assignees).toEqual(['person.dan', 'person.angie']);
   });
 
   it.each([
@@ -1837,6 +1841,56 @@ describe('duplicateTaskSeed — a copy of the rule, not of the record (#279)', (
     expect(duplicateTaskSeed(bare).area_id).toBeNull();
     expect(duplicateTaskSeed(bare).labels).toEqual([]);
     expect(duplicateTaskSeed(bare).card_links).toEqual([]);
+  });
+});
+
+// The reported bug: a picked assignee never reached the saved task. `taskFormData`
+// never seeded the field (so re-opening a saved task always showed the picker
+// empty) and `buildTaskPayload` never forwarded it (so even a fresh pick from the
+// form was dropped on save) — the same shape of gap `labels`/`card_links` are
+// guarded against elsewhere in this file, just missing for this field.
+describe('assignees round-trip', () => {
+  const task = {
+    id: 't1',
+    name: 'Water flowers',
+    recurrence_type: 'floating',
+    interval: 3,
+    unit: 'days',
+    assignees: ['person.dan', 'person.angie'],
+  };
+
+  it('taskFormData seeds the picker from a saved task', () => {
+    expect(taskFormData(task).assignees).toEqual(['person.dan', 'person.angie']);
+  });
+
+  it('taskFormData defaults an unassigned task to an empty list, not undefined', () => {
+    expect(taskFormData({ ...task, assignees: undefined }).assignees).toEqual([]);
+  });
+
+  it('buildTaskPayload forwards a freshly-picked value onto the outgoing payload', () => {
+    // Simulates the form after the user picks someone: an edit state carrying
+    // `assignees` that was never part of the loaded task.
+    const edited = { recurrence_type: 'floating', interval: 1, name: 'New task' };
+    expect(
+      buildTaskPayload({ ...edited, assignees: ['person.dan'] }).assignees,
+    ).toEqual(['person.dan']);
+  });
+
+  it('buildTaskPayload sends an explicit empty list rather than omitting the key', () => {
+    expect(buildTaskPayload({ name: 'T', recurrence_type: 'floating' }).assignees).toEqual(
+      [],
+    );
+  });
+
+  it('survives a full form round-trip (load, re-seed, save) unchanged', () => {
+    const payload = buildTaskPayload({ ...task, ...taskFormData(task) });
+    expect(payload.assignees).toEqual(['person.dan', 'person.angie']);
+  });
+
+  it('applies to a triggered task too', () => {
+    const triggered = { ...task, recurrence_type: 'triggered' };
+    const payload = buildTaskPayload({ ...triggered, ...taskFormData(triggered) });
+    expect(payload.assignees).toEqual(['person.dan', 'person.angie']);
   });
 });
 

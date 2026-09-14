@@ -867,6 +867,7 @@ export function taskFormData(task: Partial<Task>): Record<string, unknown> {
     // task's current part source.
     consumable_link: sd.consumable_link ?? consumableLinkToken(task),
     labels: task.labels ?? [],
+    assignees: task.assignees ?? [],
     // The card-link picker holds `asset_id:entry_id` tokens. `cardLinkTokens`
     // accepts either the stored `{asset_id, entry_id}` objects (a freshly loaded
     // task) or the flat token strings the form mutates onto the edit state.
@@ -973,6 +974,7 @@ export function duplicateTaskSeed(task: Task): Partial<Task> {
     device_id: task.device_id ?? null,
     area_id: task.area_id ?? null,
     labels: [...(task.labels ?? [])],
+    assignees: [...(task.assignees ?? [])],
     card_links: cardLinkTokens(task),
     completion_detail: task.completion_detail ?? 'none',
     // Capture mode is two fields, not one: `completion_detail` says whether anything
@@ -1160,6 +1162,11 @@ export function buildTaskPayload(task: Partial<Task>): Partial<Task> {
   // Labels apply to every task kind (including triggered) and always round-trip,
   // so an empty array correctly clears a task's labels on update.
   payload.labels = Array.isArray(task.labels) ? task.labels : [];
+  // Assignees likewise apply to every task kind and always round-trip. Without this
+  // the picker's value never left the edit state: buildTaskPayload built every
+  // outgoing payload without it, so a task saved with an assignee stored one with
+  // none regardless of what the form showed.
+  payload.assignees = Array.isArray(task.assignees) ? task.assignees : [];
   // Card links likewise apply to every kind and always round-trip — an empty array
   // clears the selection on update. Convert the form's tokens back to references.
   payload.card_links = cardLinksFromTokens(cardLinkTokens(task));

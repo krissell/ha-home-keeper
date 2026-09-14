@@ -17,6 +17,11 @@ versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
 - **Assignee required.** The task form now requires an assignee (a person, or
   "All") before it saves — Home Keeper has no use for a task nobody owns.
 
+### Fixed
+
+- **Assignees never saved.** Picking someone in the task form's assignee field did
+  nothing — the value never reached the saved task, on either create or edit.
+
 ## [0.24.0b5]
 
 ### Changed
