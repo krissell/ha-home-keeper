@@ -102,6 +102,7 @@ def _maximal_task(**overrides) -> dict:
         "area_id": "area_base",
         "enabled": True,
         "labels": ["label_hvac", "label_seasonal"],
+        "assignees": ["person.tester"],
         "card_links": [{"asset_id": "asset_1", "entry_id": "doc_1"}],
         "task_chips": [{"label": "HVAC", "icon": "mdi:fire"}],
         "tag_id": "tag_furnace",

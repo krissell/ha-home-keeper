@@ -145,6 +145,7 @@
   "due.tomorrow": "tomorrow",
   "due.yesterday": "yesterday",
   "error.actionFailed": "Something went wrong. Please try again.",
+  "error.assigneeRequired": "Assign this task to a person, or to All",
   "error.exportFailed": "Inventory export failed",
   "error.loadFailed": "Couldn't load Home Keeper.",
   "error.nameRequired": "Name is required",

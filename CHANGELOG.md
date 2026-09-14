@@ -14,6 +14,8 @@ versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
   Home Keeper pushes straight to their phone when it goes overdue or due soon. No
   profile or notification setup is needed, and a person can carry more than one
   phone.
+- **Assignee required.** The task form now requires an assignee (a person, or
+  "All") before it saves — Home Keeper has no use for a task nobody owns.
 
 ## [0.24.0b5]
 

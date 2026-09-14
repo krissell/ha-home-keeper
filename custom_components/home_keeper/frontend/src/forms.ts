@@ -436,7 +436,7 @@ export function taskSchemaSections(
             ? [{ name: 'labels', selector: selLabel(true) } as FormField]
             : []),
           ...(!locked.has('assignees')
-            ? [{ name: 'assignees', selector: selSelect(people, true) } as FormField]
+            ? [{ name: 'assignees', required: true, selector: selSelect(people, true) } as FormField]
             : []),
           ...cardLinksField,
         ],
@@ -673,7 +673,7 @@ export function taskSchemaSections(
       : []),
     ...(!locked.has('labels') ? [{ name: 'labels', selector: selLabel(true) } as FormField] : []),
     ...(!locked.has('assignees')
-      ? [{ name: 'assignees', selector: selSelect(people, true) } as FormField]
+      ? [{ name: 'assignees', required: true, selector: selSelect(people, true) } as FormField]
       : []),
     ...cardLinksField,
   ];

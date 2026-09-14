@@ -910,6 +910,15 @@ export class HomeKeeperPanel extends HTMLElement implements PanelHost {
       this._render();
       return;
     }
+    // A companion can lock the assignees field out of the form entirely
+    // (`locked_fields`) — don't demand a value for a field the user was never
+    // shown. Every other task must name someone, or All.
+    const locked = new Set<string>((task as Task).managed_by?.locked_fields ?? []);
+    if (!locked.has('assignees') && !(task.assignees && task.assignees.length)) {
+      this._edit.error = t('error.assigneeRequired');
+      this._render();
+      return;
+    }
     const payload = buildTaskPayload(task);
     try {
       const saved = task.id

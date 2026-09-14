@@ -683,6 +683,11 @@ export class HomeKeeperCard extends HTMLElement {
       this._render();
       return;
     }
+    if (!task.assignees || !task.assignees.length) {
+      this._edit.error = t('error.assigneeRequired');
+      this._render();
+      return;
+    }
     // The card only *creates* tasks (the header "+" button). Editing and deleting
     // live in the sidebar panel, so there's no update/delete path here.
     try {
