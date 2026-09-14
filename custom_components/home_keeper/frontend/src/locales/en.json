@@ -259,7 +259,7 @@
   "help.also_every_on": "Make the task due after a period, even if the count is not reached. Whichever comes first.",
   "help.anchor": "The reference date the fixed schedule counts from.",
   "help.area_id": "Optionally place the task in an area for grouping and filtering. Without one, it uses the attached device's area.",
-  "help.assignees": "Optional. Notify these people when it's due, and let any one of them mark it done.",
+  "help.assignees": "Required. Notify these people when it's due, and let any one of them mark it done.",
   "help.card_links": "Documents or links from the attached appliance to surface on the dashboard card.",
   "help.completion_detail": "Ask for a note, a cost, or who did it when the task is completed.",
   "help.consumable_link": "Completing the task draws this part's per-use amount from stock and can fire a reorder alert.",
