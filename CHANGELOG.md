@@ -15,6 +15,13 @@ versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
   `add_declarative_companion` and `update_declarative_companion` services. The
   panel dialog does not offer this field yet.
 
+### Fixed
+
+- **Assignees on the `add_task` and `update_task` services.** Both services
+  rejected `assignees` outright, even though `services.yaml` documented it and the
+  panel's own task form has used it since the field shipped. Only the panel's
+  internal websocket path worked; every other caller got a 400.
+
 ## [0.24.0b5]
 
 ### Changed
