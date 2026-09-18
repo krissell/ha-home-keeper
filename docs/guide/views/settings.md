@@ -76,8 +76,11 @@ also supplies the battery type and the count. Write a recipe for a low-battery
 `binary_sensor` if you do not use that glue integration.
 
 The *Add companion* dialog shows a live preview of the matches before you save. A
-warning shows above 50 matches. A recipe cannot match more than 500 entities. See
-[INTEGRATING.md](../../INTEGRATING.md) for the service reference.
+warning shows above 50 matches. A recipe cannot match more than 500 entities. A
+recipe can also set assignees for every task it makes, through the
+`add_declarative_companion` and `update_declarative_companion` services — the panel
+dialog does not offer this field yet. See [INTEGRATING.md](../../INTEGRATING.md)
+for the service reference.
 
 ![The two-card preset picker modal (Device Pulse disabled because the upstream integration isn't installed)](../../images/21c-panel-declarative-preset-picker.png)
 

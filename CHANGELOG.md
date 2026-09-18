@@ -6,6 +6,15 @@ All notable changes to Home Keeper are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses semantic
 versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
 
+## [0.24.0b6]
+
+### Added
+
+- **[Declarative companion assignees](https://prestomation.github.io/ha-home-keeper/docs/guide/settings).**
+  A recipe can assign every task it makes to a person, through the
+  `add_declarative_companion` and `update_declarative_companion` services. The
+  panel dialog does not offer this field yet.
+
 ## [0.24.0b5]
 
 ### Changed
