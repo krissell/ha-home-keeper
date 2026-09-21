@@ -240,7 +240,30 @@ def test_normalize_task_template_drops_the_keys_nothing_ever_read():
         "name_template": "Fix {{ friendly_name }}",
         "notes_template": "",
         "labels": [],
+        "assignees": [],
     }
+
+
+def test_normalize_task_template_accepts_assignees():
+    spec = _normalized_spec(
+        task_template={
+            "name_template": "Fix {{ friendly_name }}",
+            "assignees": ["person.dan", "person.dan", " person.angie "],
+        }
+    )
+    assert spec["task_template"]["assignees"] == ["person.dan", "person.angie"]
+
+
+def test_normalize_task_template_rejects_bad_assignees():
+    with pytest.raises(TaskValidationError):
+        dc.normalize_declarative_companion(
+            _spec(
+                task_template={
+                    "name_template": "Fix {{ friendly_name }}",
+                    "assignees": {"not": "a list"},
+                }
+            )
+        )
 
 
 def test_normalize_enabled_coerces_bool():
@@ -1134,6 +1157,65 @@ def test_created_task_has_no_labels_when_the_template_sets_none():
     )
 
     assert ops[0][1]["labels"] == []
+
+
+def test_created_task_takes_assignees_from_the_template():
+    spec = _normalized_spec(
+        task_template={
+            "name_template": "Check on {{ friendly_name }}",
+            "notes_template": "",
+            "assignees": ["person.dan"],
+        }
+    )
+    key, m = _match("sensor.hub_total_failed_pings", spec["id"])
+
+    _new, ops, _ = dc.reconcile_declarative_tasks(
+        spec, {key: m}, {}, _rendered(key), config_entry_id=ENTRY, now=NOW
+    )
+
+    assert ops[0][1]["assignees"] == ["person.dan"]
+
+
+def test_created_task_has_no_assignees_when_the_template_sets_none():
+    spec = _normalized_spec()
+    key, m = _match("sensor.hub_total_failed_pings", spec["id"])
+
+    _new, ops, _ = dc.reconcile_declarative_tasks(
+        spec, {key: m}, {}, _rendered(key), config_entry_id=ENTRY, now=NOW
+    )
+
+    assert ops[0][1]["assignees"] == []
+
+
+def test_reconcile_never_overwrites_a_hand_changed_assignee():
+    # Unlike name/notes/device/area/sensor, ``assignees`` is stamped only when a
+    # task is first made (see ``_build_task``). A later reconcile pass — triggered
+    # by any entity/device/area registry event, not just this spec's own entity —
+    # must leave a person's manual reassignment alone.
+    spec = _normalized_spec(
+        task_template={
+            "name_template": "Check on {{ friendly_name }}",
+            "notes_template": "",
+            "assignees": ["person.dan"],
+        }
+    )
+    key, m = _match("sensor.hub_total_failed_pings", spec["id"])
+    _new, ops, _ = dc.reconcile_declarative_tasks(
+        spec, {key: m}, {}, _rendered(key), config_entry_id=ENTRY, now=NOW
+    )
+    created = ops[0][1]
+    tasks = {created["id"]: created}
+    tasks[created["id"]]["assignees"] = ["person.angie"]
+
+    # A second pass over the same match, e.g. after an unrelated area rename.
+    m["entity"]["area_id"] = "area2"
+    _new2, ops2, changed = dc.reconcile_declarative_tasks(
+        spec, {key: m}, tasks, _rendered(key), config_entry_id=ENTRY, now=NOW
+    )
+
+    assert changed is True
+    assert ops2[0][0] == "updated"
+    assert ops2[0][1]["assignees"] == ["person.angie"]
 
 
 def test_reconcile_rejects_an_unrendered_match_rather_than_inventing_a_name():

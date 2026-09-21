@@ -152,6 +152,8 @@ ADD_TASK_SCHEMA = vol.Schema(
         vol.Optional("area_id"): cv.string,
         # HA label-registry ids; used (with device/area labels) to scope the card.
         vol.Optional("labels"): vol.All(cv.ensure_list, [cv.string]),
+        # HA person-entity ids this task is assigned to. See models.normalize_assignees.
+        vol.Optional("assignees"): vol.All(cv.ensure_list, [cv.string]),
         # Appliance link references (document/metadata links) the dashboard card
         # surfaces on this task's row. See models.normalize_card_links.
         vol.Optional("card_links"): vol.All(cv.ensure_list, [CARD_LINK_SCHEMA]),
@@ -191,6 +193,7 @@ UPDATE_TASK_SCHEMA = vol.Schema(
         vol.Optional("device_id"): cv.string,
         vol.Optional("area_id"): cv.string,
         vol.Optional("labels"): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional("assignees"): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional("card_links"): vol.All(cv.ensure_list, [CARD_LINK_SCHEMA]),
         vol.Optional("completion_detail"): cv.string,
         vol.Optional("completion_required_fields"): vol.All(

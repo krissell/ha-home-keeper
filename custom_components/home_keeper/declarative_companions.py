@@ -171,14 +171,22 @@ def _normalize_task_template(data: Any) -> dict[str, Any]:
 
     Jinja source strings are validated for length and non-emptiness (``name_template``
     only) — actual template compilation happens on the HA-bound side where a
-    ``hass`` object is in scope. ``labels`` passes through with a light shape check
-    and is stamped onto the materialized task.
+    ``hass`` object is in scope. ``labels`` and ``assignees`` pass through with a
+    light shape check and are stamped onto the materialized task.
 
     The v1 shape also accepted ``category`` and ``priority``, and nothing ever read
     them: :func:`_build_task` stamps ``labels`` alone, and a Home Keeper task has no
     category or priority field to stamp them onto. They are dropped here rather than
     refused, because a spec written when the service still advertised them would
     otherwise fail validation on load and be dropped whole.
+
+    ``assignees`` reuses :func:`models.normalize_assignees`, so it accepts the same
+    shapes (a string, a list, ``None``) and dedupes the same way a hand-created
+    task's ``assignees`` does — entity-id format is unchecked here too, same as
+    there. Like ``labels``, it is stamped by :func:`_build_task` only when a fresh
+    task is made — the reconcile pass's field-by-field diff
+    (:func:`reconcile_declarative_tasks`) never touches it, so a person who
+    reassigns a materialized task keeps that choice across every later reconcile.
     """
     if data is None:
         data = {}
@@ -202,6 +210,7 @@ def _normalize_task_template(data: Any) -> dict[str, Any]:
         result["labels"] = []
     else:
         result["labels"] = _clean_id_list(labels_raw, "task_template.labels")
+    result["assignees"] = models.normalize_assignees(data.get("assignees"))
     return result
 
 
@@ -527,6 +536,8 @@ def _build_task(
     }
     if labels := template.get("labels"):
         task_input["labels"] = labels
+    if assignees := template.get("assignees"):
+        task_input["assignees"] = assignees
     task = models.build_task(task_input, now=now)
     # ``build_task`` for a sensor task computes next_due=None (dormant). Keep it
     # dormant explicitly so a future default change doesn't quietly arm every fresh
