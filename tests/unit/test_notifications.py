@@ -1026,3 +1026,26 @@ def test_plural_category_boundaries_match_cldr():
     assert n._tn("pl", "digest_title", 5, count=5) == "5 zadań do zrobienia"
     assert n._tn("pl", "digest_title", 12, count=12) == "12 zadań do zrobienia"
     assert n._tn("pl", "digest_title", 22, count=22) == "22 zadania do zrobienia"
+
+
+# ── notification tag (APNs collapse-id is capped at 64 bytes) ──────────────
+
+
+def test_notification_tag_keeps_a_short_id_readable():
+    assert n.notification_tag("325fbe495fde415c8d0301295e663c79") == (
+        "home_keeper_325fbe495fde415c8d0301295e663c79"
+    )
+
+
+def test_notification_tag_fits_the_apns_limit_for_a_direct_send_id():
+    tag = n.notification_tag(
+        "direct-7d5c3f2e-1b2a-4c3d-9e8f-0a1b2c3d4e5f-person.krissell"
+    )
+    assert len(tag.encode()) <= 64
+
+
+def test_notification_tag_is_stable_and_distinct_per_id():
+    long_a = "direct-7d5c3f2e-1b2a-4c3d-9e8f-0a1b2c3d4e5f-person.krissell"
+    long_b = "direct-7d5c3f2e-1b2a-4c3d-9e8f-0a1b2c3d4e5f-person.angie"
+    assert n.notification_tag(long_a) == n.notification_tag(long_a)
+    assert n.notification_tag(long_a) != n.notification_tag(long_b)

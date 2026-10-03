@@ -17,6 +17,7 @@ See ``docs/PROFILES_REFACTOR_PLAN.md`` / ``docs/ACTIONABLE_NOTIFICATIONS_PLAN.md
 from __future__ import annotations
 
 import functools
+import hashlib
 import json
 import logging
 import re
@@ -592,6 +593,9 @@ def _tn(lang: str, key: str, n: int, **params: Any) -> str:
 # ── payload building ────────────────────────────────────────────────────────────
 
 
+_APNS_COLLAPSE_ID_MAX = 64
+
+
 def notification_tag(notification_id: str) -> str:
     """The stable mobile-app ``tag`` for a notification's rolling message.
 
@@ -599,7 +603,11 @@ def notification_tag(notification_id: str) -> str:
     digest) *replaces* the previous notification in place rather than stacking, and
     lets the listener clear it when the queue empties.
     """
-    return f"home_keeper_{notification_id}"
+    tag = f"home_keeper_{notification_id}"
+    if len(tag) <= _APNS_COLLAPSE_ID_MAX:
+        return tag
+    digest = hashlib.sha256(notification_id.encode()).hexdigest()[:32]
+    return f"home_keeper_{digest}"
 
 
 def payload_data(
