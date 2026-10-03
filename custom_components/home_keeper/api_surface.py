@@ -310,6 +310,21 @@ PAYLOAD_SPINES: dict[str, tuple[Field, ...]] = {
             "the detected upstream, for a catalog-suggested glue",
         ),
     ),
+    "device_offline": (
+        Field("entity_id", "str", "the device entity that went offline"),
+        Field("name", "str", "its friendly name"),
+        Field("device_id", "str | None", "its device registry id"),
+        Field("attempts", "int", "recovery attempts made before escalating"),
+        Field("offline_since", "str", "ISO time it first went unavailable"),
+    ),
+    "device_recovered": (
+        Field("entity_id", "str", "the device entity that came back"),
+        Field("name", "str", "its friendly name"),
+        Field("device_id", "str | None", "its device registry id"),
+        Field("attempts", "int", "recovery attempts made before escalating"),
+        Field("offline_since", "str", "ISO time it first went unavailable"),
+        Field("recovered_at", "str", "ISO time it came back"),
+    ),
     "declarative_companion": (
         Field("spec_id", "str"),
         Field("name", "str"),
@@ -568,6 +583,21 @@ EVENTS: tuple[EventSpec, ...] = (
         "fired",
         "companion",
         "a curated upstream is newly detected installed while its glue isn't",
+    ),
+    EventSpec(
+        const.EVENT_DEVICE_OFFLINE,
+        "EVENT_DEVICE_OFFLINE",
+        "fired",
+        "device_offline",
+        "a real device stays unavailable through its recovery attempts and a task is "
+        "raised for it; devices that may not be cycled skip the attempts",
+    ),
+    EventSpec(
+        const.EVENT_DEVICE_RECOVERED,
+        "EVENT_DEVICE_RECOVERED",
+        "fired",
+        "device_recovered",
+        "a device raised by home_keeper_device_offline comes back and its task clears",
     ),
     EventSpec(
         const.EVENT_DECLARATIVE_COMPANION_ADDED,

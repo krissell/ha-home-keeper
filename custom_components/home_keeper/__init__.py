@@ -82,6 +82,7 @@ from .coordinator import (
     task_has_entities,
 )
 from .declarative_companion_sync import DeclarativeCompanionSync
+from .device_offline_sync import DeviceOfflineSync
 from .models import TaskValidationError
 from .problem_sync import ProblemSensorSync
 from .resolve import (
@@ -839,6 +840,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Now that platforms are up, start the live problem-sensor listeners (these may
     # reload the entry when a synced task is created/removed, so they run last).
     problem_sync.async_start_listeners()
+    # Real devices that stay offline: poll availability and run the recovery ladder.
+    DeviceOfflineSync(hass, entry, coordinator).async_start()
     # Same for the declarative-companion reconciler: a registry change / spec
     # edit may create or remove managed tasks (with per-task entities), so its
     # listener also triggers reloads.

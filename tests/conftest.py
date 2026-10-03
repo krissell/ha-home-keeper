@@ -50,6 +50,7 @@ _PURE_MODULES = (
     "todo_items",
     "shopping",
     "problem_tasks",
+    "device_offline",
     "sensor_tasks",
     "inventory",
     "companions_catalog",

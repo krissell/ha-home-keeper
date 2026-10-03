@@ -20,9 +20,16 @@ versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
   A recipe can assign every task it makes to a person, through the
   `add_declarative_companion` and `update_declarative_companion` services. The
   panel dialog does not offer this field yet.
+- **[Offline devices](https://prestomation.github.io/ha-home-keeper/docs/guide/triggered-tasks).**
+  A real device that stays unavailable for 10 minutes gets up to three recovery
+  attempts, three minutes apart. If it is still offline after the last attempt, Home
+  Keeper raises a task for its assignee and pushes it to their phone.
 
 ### Fixed
 
+- **Assignee pushes rejected by Apple.** Direct assignee notifications failed on
+  iPhones because the notification tag was longer than Apple allows. Long tags are
+  now shortened, and existing short tags are unchanged.
 - **Assignees never saved.** Picking someone in the task form's assignee field did
   nothing — the value never reached the saved task, on either create or edit.
 - **Assignees on the `add_task` and `update_task` services.** Both services

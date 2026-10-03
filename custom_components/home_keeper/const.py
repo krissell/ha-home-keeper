@@ -242,6 +242,13 @@ TASK_SOURCE_BUY = "buy"
 # ``problem_tasks.py`` / ``problem_sync.py``.
 TASK_SOURCE_PROBLEM_SENSOR = "problem_sensor"
 
+# Provenance for the task raised when a real device stays offline after its recovery
+# attempts. See ``device_offline.py`` / ``device_offline_sync.py``.
+TASK_SOURCE_DEVICE_OFFLINE = "device_offline"
+# Who is told when a device stays offline. Assigned on the task, so the direct
+# assignee path delivers the push to that person's phone.
+DEVICE_OFFLINE_ASSIGNEE = "person.krissell"
+
 # Opaque ``origin`` marker the problem-sensor sync passes to ``complete_task`` /
 # ``trigger_task`` to authorize the otherwise-blocked arm/clear of a synced task.
 # Every user-facing completion surface (to-do, button, service, websocket, panel)
@@ -577,6 +584,11 @@ EVENT_REGISTER_COMPANIONS = f"{DOMAIN}_register_companions"
 # upstream's glue is first suggested. Payload built by events.companion_event_data.
 EVENT_COMPANION_CONNECTED = f"{DOMAIN}_companion_connected"
 EVENT_COMPANION_SUGGESTED = f"{DOMAIN}_companion_suggested"
+
+# A real device stays unavailable through its recovery attempts and a task is raised,
+# and the same device later comes back, which clears that task.
+EVENT_DEVICE_OFFLINE = f"{DOMAIN}_device_offline"
+EVENT_DEVICE_RECOVERED = f"{DOMAIN}_device_recovered"
 
 # ── Declarative companions ─────────────────────────────────────────────────────
 # A **declarative companion** is a Home-Keeper-owned recipe (target integration +

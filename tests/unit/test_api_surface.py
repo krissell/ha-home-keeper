@@ -382,6 +382,17 @@ _FULL_COMPANION: dict[str, Any] = {
     "upstream_domain": "upstream",
     "docs_url": "https://example.com",
 }
+_FULL_DEVICE_OFFLINE: dict[str, Any] = {
+    "entity_id": "sensor.garage_battery",
+    "name": "Garage battery",
+    "device_id": "device-1",
+    "attempts": 3,
+    "offline_since": "2026-10-03T12:00:00+00:00",
+}
+_FULL_DEVICE_RECOVERED: dict[str, Any] = {
+    **_FULL_DEVICE_OFFLINE,
+    "recovered_at": "2026-10-03T12:30:00+00:00",
+}
 _FULL_DECLARATIVE_SPEC: dict[str, Any] = {
     "id": "spec-1",
     "name": "Firmware update available",
@@ -409,6 +420,16 @@ def test_payload_spines_match_the_event_builders() -> None:
         "asset": (events.asset_event_data, ({},), (_FULL_ASSET,)),
         "stock": (events.stock_event_data, ({}, {}), (_FULL_ASSET, _FULL_PART)),
         "companion": (events.companion_event_data, ({},), (_FULL_COMPANION,)),
+        "device_offline": (
+            events.device_offline_event_data,
+            ({},),
+            (_FULL_DEVICE_OFFLINE,),
+        ),
+        "device_recovered": (
+            events.device_recovered_event_data,
+            ({},),
+            (_FULL_DEVICE_RECOVERED,),
+        ),
         "declarative_companion": (
             events.declarative_companion_event_data,
             ({},),
