@@ -383,9 +383,8 @@ _FULL_COMPANION: dict[str, Any] = {
     "docs_url": "https://example.com",
 }
 _FULL_DEVICE_OFFLINE: dict[str, Any] = {
-    "entity_id": "sensor.garage_battery",
-    "name": "Garage battery",
     "device_id": "device-1",
+    "name": "Garage battery",
     "attempts": 3,
     "offline_since": "2026-10-03T12:00:00+00:00",
 }

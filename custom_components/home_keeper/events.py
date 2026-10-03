@@ -145,9 +145,8 @@ def companion_event_data(companion: dict[str, Any]) -> dict[str, Any]:
 def device_offline_event_data(info: dict[str, Any]) -> dict[str, Any]:
     """Return the payload for `home_keeper_device_offline`."""
     return {
-        "entity_id": info.get("entity_id"),
-        "name": info.get("name"),
         "device_id": info.get("device_id"),
+        "name": info.get("name"),
         "attempts": info.get("attempts"),
         "offline_since": info.get("offline_since"),
     }

@@ -21,9 +21,9 @@ versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
   `add_declarative_companion` and `update_declarative_companion` services. The
   panel dialog does not offer this field yet.
 - **[Offline devices](https://prestomation.github.io/ha-home-keeper/docs/guide/triggered-tasks).**
-  A real device that stays unavailable for 10 minutes gets up to three recovery
-  attempts, three minutes apart. If it is still offline after the last attempt, Home
-  Keeper raises a task for its assignee and pushes it to their phone.
+  A device whose entities all stay unavailable for 10 minutes gets up to three
+  recovery attempts, three minutes apart. If it is still offline after the last
+  attempt, Home Keeper raises a task for its assignee and pushes it to their phone.
 
 ### Fixed
 
