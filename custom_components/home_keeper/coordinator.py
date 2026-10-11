@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -61,6 +61,26 @@ def _edge_state_store(hass: HomeAssistant) -> dict[str, transitions.StateMap]:
 def discard_edge_state(hass: HomeAssistant, entry_id: str) -> None:
     """Drop an entry's persisted edge state (called when the entry is removed)."""
     _edge_state_store(hass).pop(entry_id, None)
+
+
+# Parallel store for the 24-hour direct-notify resend (notifier.py). Kept separate
+# from the edge-state map above: that one is transitions.py's pure fire-once-per-
+# next_due bookkeeping, this one is "when did a still-overdue task last get pushed to
+# its assignees" — a different question, owned by the notifier, that would muddy the
+# edge-detector's own pure state shape if folded in. Same process-lifetime-only
+# tradeoff: an HA restart forgets it, so the 24h clock restarts rather than firing a
+# resend for everything already overdue.
+_DIRECT_NOTIFY_STORE = f"{DOMAIN}_direct_notify_state"
+
+
+def _direct_notify_store(hass: HomeAssistant) -> dict[str, dict[str, dict[str, Any]]]:
+    """The process-lifetime direct-notify map keyed by config-entry id."""
+    return hass.data.setdefault(_DIRECT_NOTIFY_STORE, {})
+
+
+def discard_direct_notify_state(hass: HomeAssistant, entry_id: str) -> None:
+    """Drop an entry's persisted direct-notify state (entry removal only)."""
+    _direct_notify_store(hass).pop(entry_id, None)
 
 
 def entity_set_key(task: dict[str, Any] | None) -> tuple:
@@ -144,6 +164,11 @@ class HomeKeeperCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         # Guards against piling up entry reloads when several buy-task syncs land close
         # together (mirrors ProblemSensorSync._reload_scheduled).
         self._buy_reload_scheduled = False
+        # The 24h direct-notify resend's own per-task bookkeeping; see
+        # ``_direct_notify_store`` for why this is separate from ``_edge_state``.
+        self._direct_notify_state: dict[str, dict[str, Any]] = dict(
+            _direct_notify_store(hass).get(entry.entry_id) or {}
+        )
 
     @property
     def entry(self) -> ConfigEntry:
@@ -151,6 +176,35 @@ class HomeKeeperCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         entry = self.config_entry
         assert entry is not None  # always set: we pass config_entry= in __init__
         return entry
+
+    def note_direct_sent(
+        self, task_id: str, next_due: str | None, now: datetime
+    ) -> None:
+        """Record that *task_id* got a direct push, due as of *next_due*."""
+        self._direct_notify_state[task_id] = {
+            "next_due": next_due,
+            "sent_at": now.isoformat(),
+        }
+        _direct_notify_store(self.hass)[self.entry.entry_id] = self._direct_notify_state
+
+    def direct_resend_due(
+        self, task_id: str, next_due: str | None, now: datetime
+    ) -> bool:
+        """Whether *task_id* (still overdue as of *next_due*) is due another push.
+
+        No record yet, or one for a different ``next_due`` (a prior overdue cycle) —
+        seed it as sent *now* and say no: the task either just got the edge-triggered
+        push this very refresh, or this is the first refresh that has ever seen it, and
+        either way the 24h clock should start counting from here, not fire immediately.
+        """
+        state = self._direct_notify_state.get(task_id)
+        if state is None or state.get("next_due") != next_due:
+            self.note_direct_sent(task_id, next_due, now)
+            return False
+        sent_at = recurrence._parse(state["sent_at"])
+        if sent_at is None:
+            return True
+        return (now - sent_at) >= timedelta(hours=24)
 
     def enable_transition_events(self) -> None:
         """Start firing overdue/due-soon events (called once setup is complete).
@@ -246,6 +300,9 @@ class HomeKeeperCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             if fired_kinds:
                 await notifier.async_send_auto(self.hass, self, fired_kinds)
                 await notifier.async_send_direct_assignees(self.hass, self, fired)
+            # Not gated on fired_kinds: a task that stays overdue with nothing changing
+            # is exactly the steady-state case this needs to catch.
+            await notifier.async_resend_overdue_direct_assignees(self.hass, self)
         elif not self._had_prior_edge_state:
             # Fresh start (HA restart / first setup): adopt the detected state as the
             # silent baseline so a task already overdue at startup doesn't replay.

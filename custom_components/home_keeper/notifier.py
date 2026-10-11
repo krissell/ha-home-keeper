@@ -25,7 +25,6 @@ from homeassistant.util import dt as dt_util
 
 from . import notifications, profiles, recurrence
 from .const import (
-    EVENT_TASK_DUE_SOON,
     EVENT_TASK_OVERDUE,
     OPTION_ALLOW_SKIP,
     OPTION_ALLOW_SNOOZE,
@@ -343,7 +342,7 @@ async def async_send_direct_assignees(
 
     Independent of (and additional to) the Profile-based :func:`async_send_auto`:
     reads the ``assignee_targets`` mapping (person -> notify targets) and, for each
-    ``(event_name, payload)`` in *fired* that is an overdue/due-soon crossing, looks
+    ``(event_name, payload)`` in *fired* that is an overdue crossing, looks
     up the live task by ``payload["task_id"]`` and sends one actionable notification
     straight to each of its assignees' targets. ``"all"`` in a task's ``assignees``
     expands to every configured person — see ``notifications.resolve_assignee_targets``.
@@ -362,8 +361,9 @@ async def async_send_direct_assignees(
     mapping = _assignee_targets(coord.entry)
     if not mapping:
         return
-    kinds = {EVENT_TASK_OVERDUE: "overdue", EVENT_TASK_DUE_SOON: "due_soon"}
-    relevant = [payload for name, payload in fired if name in kinds]
+    # Overdue only — a due-soon push arrived a day before the task was even due and
+    # wasn't actionable, so direct-assignee sends never react to that crossing.
+    relevant = [payload for name, payload in fired if name == EVENT_TASK_OVERDUE]
     if not relevant:
         return
     tasks = coord.store.get_tasks()
@@ -377,26 +377,99 @@ async def async_send_direct_assignees(
         task = tasks.get(task_id) if task_id else None
         if task is None:
             continue
-        assignees = task.get("assignees") or []
-        if not assignees:
+        await _send_direct_to_assignees(
+            hass,
+            task,
+            mapping,
+            now=now,
+            lang=lang,
+            allow_snooze=allow_snooze,
+            allow_skip=allow_skip,
+        )
+        coord.note_direct_sent(task_id, task.get("next_due"), now)
+
+
+async def _send_direct_to_assignees(
+    hass: HomeAssistant,
+    task: dict[str, Any],
+    mapping: dict[str, list[str]],
+    *,
+    now: datetime,
+    lang: str,
+    allow_snooze: bool,
+    allow_skip: bool,
+) -> bool:
+    """Push one task to each assignee's targets. Returns whether anyone got one."""
+    assignees = task.get("assignees") or []
+    if not assignees:
+        return False
+    targets_by_person = notifications.resolve_assignee_targets(assignees, mapping)
+    if not targets_by_person:
+        return False
+    task_id = task["id"]
+    for person, targets in targets_by_person.items():
+        notification = notifications.normalize_notification(
+            {"id": f"direct-{task_id}-{person}", "targets": targets}
+        )
+        built = await hass.async_add_executor_job(
+            functools.partial(
+                notifications.build_notification,
+                task,
+                notification=notification,
+                now=now,
+                lang=lang,
+                allow_snooze=allow_snooze,
+                allow_skip=allow_skip,
+            )
+        )
+        await _send_payload(hass, targets, built)
+    return True
+
+
+async def async_resend_overdue_direct_assignees(
+    hass: HomeAssistant, coord: HomeKeeperCoordinator
+) -> None:
+    """Re-push a still-overdue task's direct notification every 24 hours.
+
+    A single edge-triggered push (:func:`async_send_direct_assignees`) is easy to miss
+    or forget. Every refresh, any task that is *currently* overdue and whose last
+    direct push was 24+ hours ago gets another one — but a task that was snoozed or
+    completed is no longer overdue (its ``next_due`` moved into the future or cleared),
+    so it drops out of consideration with no special-casing needed here.
+
+    ``coord`` tracks ``(next_due, sent_at)`` per task (see ``note_direct_sent``), reset
+    whenever ``next_due`` changes so a task re-notifies itself from scratch when it
+    becomes overdue again later. The map is process-lifetime only (see
+    ``coordinator._direct_notify_store``): an HA restart forgets it, so the clock
+    restarts rather than firing a backlog of resends for everything already overdue.
+    """
+    mapping = _assignee_targets(coord.entry)
+    if not mapping:
+        return
+    now = dt_util.now()
+    lang = hass.config.language
+    opts = current_options(coord.entry)
+    allow_snooze = bool(opts[OPTION_ALLOW_SNOOZE])
+    allow_skip = bool(opts[OPTION_ALLOW_SKIP])
+    for task in coord.store.get_tasks().values():
+        next_due = task.get("next_due")
+        if not task.get("enabled", True) or next_due is None:
             continue
-        targets_by_person = notifications.resolve_assignee_targets(assignees, mapping)
-        for person, targets in targets_by_person.items():
-            notification = notifications.normalize_notification(
-                {"id": f"direct-{task_id}-{person}", "targets": targets}
-            )
-            built = await hass.async_add_executor_job(
-                functools.partial(
-                    notifications.build_notification,
-                    task,
-                    notification=notification,
-                    now=now,
-                    lang=lang,
-                    allow_snooze=allow_snooze,
-                    allow_skip=allow_skip,
-                )
-            )
-            await _send_payload(hass, targets, built)
+        if not recurrence.is_overdue(task, now=now):
+            continue
+        if not coord.direct_resend_due(task["id"], next_due, now):
+            continue
+        sent = await _send_direct_to_assignees(
+            hass,
+            task,
+            mapping,
+            now=now,
+            lang=lang,
+            allow_snooze=allow_snooze,
+            allow_skip=allow_skip,
+        )
+        if sent:
+            coord.note_direct_sent(task["id"], next_due, now)
 
 
 async def async_run_notify(

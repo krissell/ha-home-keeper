@@ -20,6 +20,9 @@ versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
   A recipe can assign every task it makes to a person, through the
   `add_declarative_companion` and `update_declarative_companion` services. The
   panel dialog does not offer this field yet.
+- **[Overdue resend](https://prestomation.github.io/ha-home-keeper/docs/guide/notifications).**
+  A still-overdue task with no snooze or completion gets another direct push 24
+  hours after its last one, so it is harder to forget.
 
 ### Fixed
 
@@ -29,6 +32,14 @@ versioning, with PEP 440 pre-release suffixes (`bN`/`aN`/`rcN`) for betas.
   rejected `assignees` outright, even though `services.yaml` documented it and the
   panel's own task form has used it since the field shipped. Only the panel's
   internal websocket path worked; every other caller got a 400.
+- **Assignee pushes rejected by Apple.** A direct assignee notification failed on
+  iPhones because its notification tag was longer than Apple allows. Long tags are
+  now shortened, and existing short tags are unchanged.
+- **Due-soon direct pushes.** A direct assignee notification fired a day before a
+  task was even due, which was not actionable. Only the overdue crossing sends one
+  now.
+- **Snooze's "Custom" option.** Picking it closed the dialog instead of prompting
+  for a date and time.
 
 ## [0.24.0b5]
 

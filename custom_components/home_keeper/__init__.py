@@ -76,6 +76,7 @@ from .const import (
 )
 from .coordinator import (
     HomeKeeperCoordinator,
+    discard_direct_notify_state,
     discard_edge_state,
     entity_set_key,
     find_coordinator,
@@ -1922,6 +1923,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     panel.async_unregister_panel(hass)
     await card.async_unregister_card_resource(hass)
     discard_edge_state(hass, entry.entry_id)
+    discard_direct_notify_state(hass, entry.entry_id)
     async_discard_new_tasks(hass, entry.entry_id)
     store = HomeKeeperStore(hass)
     await store.async_remove()

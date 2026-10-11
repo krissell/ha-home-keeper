@@ -198,9 +198,17 @@ export function renderSnoozeDialog(
     s.preset = preset;
     s.customAt = value.snoozeAt == null ? s.customAt : String(value.snoozeAt);
     s.error = undefined;
-    // Only a change in *which fields exist* justifies a re-render; anything else
-    // would steal focus mid-keystroke, so the hint is updated in place instead.
-    if (wasCustom !== (preset === 'custom')) host.rerender();
+    // Only a change in *which fields exist* justifies a rebuild; anything else would
+    // steal focus mid-keystroke, so the hint is updated in place instead. Rebuilding
+    // through the whole-panel `host.rerender()` tore this dialog down along with
+    // everything else and it never came back — picking "Custom" just closed the
+    // snooze UI. Replacing only this dialog's own node sidesteps that: the rest of
+    // the panel is untouched, so there's nothing else to go missing on the way back.
+    if (wasCustom !== (preset === 'custom')) {
+      dialog.remove();
+      renderSnoozeDialog(host, s, mountTo, close);
+      return;
+    }
     else updateSnoozeHint(mountTo, s, host.lang());
   });
   body.appendChild(form);
